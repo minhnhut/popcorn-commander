@@ -1,4 +1,9 @@
 const Sequelize = require('sequelize');
+const MovieRepository = require('./MovieRepository');
+
+const repositories = {
+    MovieRepository
+};
 
 class DataLayer {
     constructor(pathToDatabase) {
@@ -23,33 +28,37 @@ class DataLayer {
             console.error('Unable to connect to the database:', err);
         });
         this.sequelize = sequelize;
-        this.Entity = {};
-        this.Entity.Movie = sequelize.define('movies', {
-            id: {
-                type: Sequelize.INTEGER,
-                primaryKey: true
-            },
-            title: {
-                type: Sequelize.STRING
-            },
-            is_downloaded: {
-                type: Sequelize.INTEGER
-            },
-            thumbnail_url: {
-                type: Sequelize.STRING
-            },
-            year: {
-                type: Sequelize.STRING
-            }
-        }, {
-            timestamps: false
-        });
+        this.registerRepositories();
+    }
+
+    registerRepositories() {
+        this.repositories = {};
+        for (const repository in repositories) {
+            // if (object.hasOwnProperty(repository)) {
+                const repo = new repositories[repository](this.sequelize);
+                console.log(repo.entityName + " .. ready");
+                this.repositories[repo.entityName] = repo;
+            // }
+        }
     }
 
     dataHandler(request) {
-        console.log(request);
+        if (request.entity && this.repositories[request.entity]) {
+            const repo = this.repositories[request.entity];
+            if (request.action && repo[request.action]) {
+                if (request.args) {
+                    return repo[request.action](request.args);
+                } else {
+                    return repo[request.action]();
+                }
+            }
+        }
+    }
+
+    dataExec(request) {
         if (request.query) {
-            return this.Entity.Movie.findAll(request.query);
+            console.log(request);
+            request.query.call(this);
         }
     }
 }

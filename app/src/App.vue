@@ -45,7 +45,9 @@
 
 <script>
     import Hello from './components/Hello.vue'
-    import { ipcRenderer } from 'electron';
+    import { ipcRenderer } from 'electron'
+    import DataLayer from './dal/DataLayer'
+    import Op from './dal/Op'
 
     // With shell.openExternal(url) is how
     // external urls must be handled, not href
@@ -60,8 +62,19 @@
             shell.openExternal(url)
           },
           test: () => {
-              const test = ipcRenderer.send("datalink", {query:{}});
-              console.log(test);
+
+            console.log(Op);
+            DataLayer.getRepository("movie").findAll({
+                where: {
+                    "or": [{title: "Rampage"}, {title: "A"}]
+                }
+            }).then(data => {
+                console.log(JSON.stringify(data));
+            })
+            //   const test = ipcRenderer.send("datalink", {query:() => {
+
+            //   }});
+            //   console.log(test);
           }
         }
     }

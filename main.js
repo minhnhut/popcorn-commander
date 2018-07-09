@@ -9,6 +9,10 @@ require('electron-reload')(__dirname)
 
 const db = new DataLayer(path.resolve(__dirname, "movie.db"));
 
+global.dbHandler = db.dataHandler;
+global.dbExec = db.dataExec;
+global.db = db;
+
 // To avoid being garbage collected
 let mainWindow
 
@@ -18,6 +22,6 @@ app.on('ready', () => {
 
     mainWindow.loadURL(`file://${__dirname}/app/index.html`)
 
-    ipcMain.on('datalink', (event, arg) => db.dataHandler(arg));
+    ipcMain.on('datalink', (event, request) => db.dataHandler(request));
 
 })
