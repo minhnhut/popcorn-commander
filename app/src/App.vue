@@ -1,9 +1,14 @@
 <template>
     <div id='app'>
-        <input type="text" v-model="search">
-        <br/>
-        {{result}}
-        <br/>
+        <b-navbar variant="dark" type="dark">
+            <b-navbar-brand>Commander</b-navbar-brand>
+        </b-navbar>
+        
+        <b-table striped bordered small :fields="fields" :items="result" thead-class="d-none">
+            <template slot="title" slot-scope="data">
+                {{data.item.year ? `${data.item.title} (${data.item.year})` : data.item.title}}
+            </template>
+        </b-table>
         <b-button variant="primary" @click="insert()">Test()</b-button>
     </div>
 </template>
@@ -20,13 +25,23 @@
     export default {
         data: () => ({
             search: "",
-            result: ""
+            result: "",
+            fields: [
+                {
+                    key: "title",
+                    label: "Title"
+                    // formatter: (value) => value.year ? `${value.title} (${value.year})` : value.title
+                },
+            ]
         }),
         watch: {
             search: function()  {
                 console.log(this.search);
                 this.test();
             }
+        },
+        created() {
+            this.test();
         },
         methods: {
           link(url) {
@@ -62,49 +77,10 @@
                 //     this.result = data;
                 // });
             });
-
-            // DataLayer.getRepository("Movie").findAll({
-            //     where: {
-            //         title: this.search
-            //     }
-            // }).then(data => {
-            //     this.result = data;
-            // })
-            //   const test = ipcRenderer.send("datalink", {query:() => {
-
-            //   }});
-            //   console.log(test);
           }
         }
     }
 </script>
 
 <style>
-    html {
-        height: 100%;
-    }
-    body {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        margin: auto;
-    }
-    #app {
-        color: #2c3e50;
-        max-width: 600px;
-        font-family: Source Sans Pro, Helvetica, sans-serif;
-        text-align: center;
-    }
-    #app a {
-        color: #42b983;
-        text-decoration: none;
-    }
-    #app p {
-        text-align: justify;
-    }
-    .logo {
-        width: auto;
-        height: 100px;
-    }
 </style>
