@@ -1,4 +1,5 @@
 const Sequelize = require('sequelize');
+const operatorsAliases = require('./OperatorsAliases');
 const MovieRepository = require('./MovieRepository');
 
 const repositories = {
@@ -9,17 +10,8 @@ class DataLayer {
     constructor(pathToDatabase) {
         const sequelize = new Sequelize('database', 'username', 'password', {
             dialect: 'sqlite',
-            operatorsAliases: false,
-            
-            pool: {
-                max: 5,
-                min: 0,
-                acquire: 30000,
-                idle: 10000
-            },
-            
-            // SQLite only
-            storage: pathToDatabase
+            storage: pathToDatabase,
+            operatorsAliases
         });
         sequelize.authenticate().then(() => {
             console.log('Connection has been established successfully.');

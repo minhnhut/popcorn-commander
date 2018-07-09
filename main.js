@@ -12,6 +12,7 @@ const db = new DataLayer(path.resolve(__dirname, "movie.db"));
 global.dbHandler = db.dataHandler;
 global.dbExec = db.dataExec;
 global.db = db;
+global.dbOp = require('Sequelize').Op;
 
 // To avoid being garbage collected
 let mainWindow

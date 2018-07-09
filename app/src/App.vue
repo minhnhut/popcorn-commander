@@ -1,45 +1,8 @@
 <template>
     <div id='app'>
-        <img class='logo' src='./assets/electron.png' />
-        <img class='logo' src='./assets/vue.png' />
-        <img class='logo' src='./assets/webpack.png' />
-        <hello></hello>
-        <p>
-            If you are trying to build Electron apps using Vue 2, or you just
-            want to play around with them, feel free to use this
-            seed as starting point.
-        </p>
-        <p>
-            Pay attention to how resources inside src/ folder are built, CSS code
-            inside .vue components is embed into the HTML file when loaded, or
-            simply relative image paths are updated to public paths after
-            building with Webpack.
-        </p>
-        <p>
-            <b-button @click="test()" variant="primary">Bootstrap Vue</b-button> and <strong><font-awesome-icon icon="heart" /> Fontawesome 5</strong> included. 
-            
-        </p>
-        <p>
-            Here are the docs for
-            <a href='#' @click="link('http://electron.atom.io/docs/')">
-                Electron</a>,
-            <a href='#' @click="link('http://vuejs.org/guide/')">
-                Vue 2</a> and
-            <a href='#' @click="link('http://webpack.github.io/docs/')">
-                Webpack</a> and
-            <a href='#' @click="link('https://bootstrap-vue.js.org/docs/')">
-                Bootstrap Vue</a> and
-            <a href='#' @click="link('https://github.com/FortAwesome/vue-fontawesome')">
-                Fontawesome Vue</a>
-            Customize this template as you wish by adding any
-            fancy tool you are used to.
-        </p>
-        <p>
-            If you have any issues, please
-            file an issue at this seed's
-            <a href='#' @click="link('https://github.com/minhnhut/electron-vue-webpack')">
-                repository</a>.
-        </p>
+        <input type="text" v-model="search">
+        <br/>
+        {{result}}
     </div>
 </template>
 
@@ -47,29 +10,34 @@
     import Hello from './components/Hello.vue'
     import { ipcRenderer } from 'electron'
     import DataLayer from './dal/DataLayer'
-    import Op from './dal/Op'
 
     // With shell.openExternal(url) is how
     // external urls must be handled, not href
     const shell = require('electron').shell
 
     export default {
-        components: {
-            Hello
+        data: () => ({
+            search: "",
+            result: ""
+        }),
+        watch: {
+            search: function()  {
+                console.log(this.search);
+                this.test();
+            }
         },
         methods: {
-          link: (url) => {
+          link(url) {
             shell.openExternal(url)
           },
-          test: () => {
+          test() {
 
-            console.log(Op);
-            DataLayer.getRepository("movie").findAll({
+            DataLayer.getRepository("Movie").findAll({
                 where: {
-                    "or": [{title: "Rampage"}, {title: "A"}]
+                    title: this.search
                 }
             }).then(data => {
-                console.log(JSON.stringify(data));
+                this.result = data;
             })
             //   const test = ipcRenderer.send("datalink", {query:() => {
 

@@ -1,9 +1,10 @@
 import {remote, ipcRenderer} from "electron"
+import {Op} from "sequelize"
 
 //const dbHandler = remote.getGlobal("dbHandler");
 //const dbExec = remote.getGlobal("dbExec");
-const db = remote.getGlobal("db");
-const Op = db.sequelize.Op;
+// const Op = remote.getGlobal("dbOp");
+// const Op = db.sequelize.Op;
 console.log(Op);
 
 export default Op;

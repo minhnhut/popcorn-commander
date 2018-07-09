@@ -3,7 +3,7 @@ const Sequelize = require('sequelize')
 
 class MovieRepository extends BaseRepository {
     constructor(db) {
-        super(db, 'movie')
+        super(db, 'Movie')
     }
 
     define() {
