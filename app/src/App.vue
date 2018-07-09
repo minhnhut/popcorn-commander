@@ -3,6 +3,8 @@
         <input type="text" v-model="search">
         <br/>
         {{result}}
+        <br/>
+        <b-button variant="primary" @click="insert()">Test()</b-button>
     </div>
 </template>
 
@@ -30,15 +32,44 @@
           link(url) {
             shell.openExternal(url)
           },
+          insert() {
+              DataLayer.exec(Db => {
+                  const Movie = Db.getEntity("Movie");
+                  Movie.create({
+                      title: this.search,
+                      year: "now"
+                  });
+              })
+          },
           test() {
 
-            DataLayer.getRepository("Movie").findAll({
-                where: {
-                    title: this.search
-                }
-            }).then(data => {
-                this.result = data;
-            })
+            DataLayer.exec(Db => {
+                const Movie = Db.getEntity("Movie");
+                Movie.findAll({
+                    where: {
+                        title: {
+                            ":like": this.search + "%"
+                        }
+                    }
+                }).then(data => {
+                    this.result = data
+                });
+                // Db.getRepository("Movie").findAll({
+                //     where: {
+                //         title: this.search
+                //     }
+                // }).then(data => {
+                //     this.result = data;
+                // });
+            });
+
+            // DataLayer.getRepository("Movie").findAll({
+            //     where: {
+            //         title: this.search
+            //     }
+            // }).then(data => {
+            //     this.result = data;
+            // })
             //   const test = ipcRenderer.send("datalink", {query:() => {
 
             //   }});

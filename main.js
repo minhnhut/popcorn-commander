@@ -10,7 +10,7 @@ require('electron-reload')(__dirname)
 const db = new DataLayer(path.resolve(__dirname, "movie.db"));
 
 global.dbHandler = db.dataHandler;
-global.dbExec = db.dataExec;
+global.dbExec = (request) => db.dataExec(request);
 global.db = db;
 global.dbOp = require('Sequelize').Op;
 

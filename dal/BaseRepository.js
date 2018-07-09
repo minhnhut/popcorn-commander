@@ -23,13 +23,24 @@ class BaseRepository {
         return {};
     }
 
+    relationship() {
+        return {};
+    }
+
     findOne() {
         return this.entity.findOne();
     }
 
     findAll(queryParams) {
-        console.log(queryParams);
         return this.entity.findAll(queryParams);
+    }
+
+    findOrCreate(queryParams) {
+        return this.entity.findOrCreate(queryParams);
+    }
+
+    findAndCountAll(queryParams) {
+        return this.entity.findAndCountAll(queryParams);
     }
 
 }

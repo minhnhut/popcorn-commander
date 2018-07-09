@@ -7,11 +7,7 @@ const db = remote.getGlobal("db");
 
 export default {
 
-    getRepository: (name) => {
-        if (db.repositories[name]) {
-            return db.repositories[name];
-        }
-    },
+    getRepository: (name) => db.getRepository(name),
 
     query: (entityName, action, args) => {
         const result = db.dataHandler({
@@ -32,9 +28,6 @@ export default {
         // });
     },
     exec: (fn) => {
-        console.log(db);
-        return dbExec({
-            query: fn
-        });
+        return dbExec(fn);
     }
 }

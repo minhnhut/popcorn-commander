@@ -6,6 +6,16 @@ const repositories = {
     MovieRepository
 };
 
+const STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
+const ARGUMENT_NAMES = /([^\s,]+)/g;
+function getParamNames(func) {
+  var fnStr = func.toString().replace(STRIP_COMMENTS, '');
+  var result = fnStr.slice(fnStr.indexOf('(')+1, fnStr.indexOf(')')).match(ARGUMENT_NAMES);
+  if(result === null)
+     result = [];
+  return result;
+}
+
 class DataLayer {
     constructor(pathToDatabase) {
         const sequelize = new Sequelize('database', 'username', 'password', {
@@ -34,6 +44,21 @@ class DataLayer {
         }
     }
 
+    getRepository(name) {
+        if (this.repositories[name]) {
+            return this.repositories[name];
+        }
+        return null;
+    }
+
+    getEntity(name) {
+        const repo = this.getRepository(name);
+        if (repo) {
+            return repo.entity;
+        }
+        return null;
+    }
+
     dataHandler(request) {
         if (request.entity && this.repositories[request.entity]) {
             const repo = this.repositories[request.entity];
@@ -47,11 +72,25 @@ class DataLayer {
         }
     }
 
-    dataExec(request) {
-        if (request.query) {
-            console.log(request);
-            request.query.call(this);
-        }
+    dataExec(fn) {
+        // WIP: Trying to handle depedency injections here,
+        // but not work
+        //
+        // console.log(fn.toString());
+        // const params = getParamNames(fn);
+        // const injectedParams = [];
+        // params.forEach(param => {
+        //     console.log(param);
+        //     if (param == "Db") {
+        //         injectedParams.push(this);
+        //     } else {
+        //         const entity = this.getEntity(param);
+        //         if (entity) {
+        //             injectedParams.push(entity);
+        //         }
+        //     }
+        // });
+        fn(this);
     }
 }
 
