@@ -10,8 +10,6 @@ import FontAwesomeIconSolid from "@fortawesome/fontawesome-free-solid";
 fontawesome.library.add(FontAwesomeIconSolid);
 Vue.component(FontAwesomeIcon.name, FontAwesomeIcon);
 
-
-
 Vue.use(BootstrapVue);
 
 new Vue({

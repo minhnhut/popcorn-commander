@@ -19,7 +19,14 @@ let mainWindow
 
 app.on('ready', () => {
 
-    let mainWindow = new BrowserWindow({width: 800, height: 600})
+    // BrowserWindow.addDevToolsExtension(path.resolve(__dirname, "vue-devtools.crx"));
+
+    let mainWindow = new BrowserWindow({
+        width: 1000,
+        height: 600,
+        minWidth: 600
+    })
+
 
     mainWindow.loadURL(`file://${__dirname}/app/index.html`)
 
