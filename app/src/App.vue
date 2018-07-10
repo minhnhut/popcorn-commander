@@ -4,17 +4,24 @@
             <b-navbar-brand>Commander</b-navbar-brand>
         </b-navbar>
         
-        <b-table striped bordered small :fields="fields" :items="result" thead-class="d-none">
-            <template slot="title" slot-scope="data">
-                {{data.item.year ? `${data.item.title} (${data.item.year})` : data.item.title}}
-            </template>
-        </b-table>
-        <b-button variant="primary" @click="insert()">Test()</b-button>
+        <b-row>
+            <div class="detail p-1">
+                <movie-detail :movie="movie" v-if="movie" />
+            </div>
+            <div class="grid">
+                <movie-grid-view :movies="result" :selected-movie="movie" @item-click="viewMovieDetail" />
+            </div>
+        </b-row>
+        
+        <!-- <b-button variant="primary" @click="insert()">Test()</b-button> -->
+        <bottom-status-bar :downloaded="stats.downloaded" :total="stats.total" />
     </div>
 </template>
 
 <script>
-    import Hello from './components/Hello.vue'
+    import BottomStatusBar from "./components/BottomStatusBar.vue"
+    import MovieGridView from "./components/MovieGridView.vue"
+    import MovieDetail from "./components/MovieDetail.vue"
     import { ipcRenderer } from 'electron'
     import DataLayer from './dal/DataLayer'
 
@@ -23,16 +30,19 @@
     const shell = require('electron').shell
 
     export default {
+        components: {
+            BottomStatusBar,
+            MovieGridView,
+            MovieDetail
+        },
         data: () => ({
             search: "",
-            result: "",
-            fields: [
-                {
-                    key: "title",
-                    label: "Title"
-                    // formatter: (value) => value.year ? `${value.title} (${value.year})` : value.title
-                },
-            ]
+            result: [],
+            stats: {
+                total: 0,
+                downloaded: 0
+            },
+            movie: null
         }),
         watch: {
             search: function()  {
@@ -77,10 +87,29 @@
                 //     this.result = data;
                 // });
             });
+          },
+          viewMovieDetail(movie) {
+            this.movie = movie;
           }
         }
     }
 </script>
 
-<style>
+<style scoped>
+    .detail {
+        position: fixed;
+        width: 200px;
+        bottom: 25px;
+        top: 56px;
+        left: 0;
+        border-right: 1px solid #efefef;
+    }
+
+    .grid {
+        position: fixed;
+        left: 200px;
+        right: 0;
+        bottom: 25px;
+        top: 56px;
+    }
 </style>
