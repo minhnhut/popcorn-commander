@@ -6,13 +6,12 @@
                 <movie-detail :movie="movie" v-if="movie" />
             </div>
             <div class="grid bg-light">
-                
                 <movie-grid-view :movies="movies" :selected-movie="movie" @item-click="viewMovieDetail" />
             </div>
         </b-row>
                 
         <manual-insert-modal ref="manualInsertModal" @movie-select="insertMovie" />
-        
+        <notifications group="notification" position="bottom right" class="main-notification" />
         <bottom-status-bar :downloaded="stats.downloaded" :total="stats.total" />
     </div>
 </template>
@@ -56,34 +55,28 @@
             }
         },
         mounted() {
-            this.showManualInsertModal();
+            // this.showManualInsertModal();
             this.loadData();
         },
         methods: {
             link(url) {
                 shell.openExternal(url)
             },
-            insert() {
-                DataLayer.exec(Db => {
-                    const Movie = Db.getEntity("Movie");
-                    Movie.create({
-                        title: this.search,
-                        year: "now"
-                    });
-                })
-            },
             loadData() {
-
                 DataLayer.exec(Db => {
                     const Movie = Db.getEntity("Movie");
-                    Movie.findAll({
+                    Movie.findAndCountAll({
                         where: {
                             title: {
                                 ":like": this.search + "%"
                             }
-                        }
-                    }).then(data => {
-                        this.movies = data
+                        },
+                        order: [
+                            ["createdAt", "desc"]
+                        ]
+                    }).then(result => {
+                        this.stats.total = result.count;
+                        this.movies = result.rows;
                     });
                     // Db.getRepository("Movie").findAll({
                     //     where: {
@@ -108,7 +101,37 @@
             insertMovie(movie) {
                 DataLayer.exec(Db => {
                     const Movie = Db.getEntity("Movie");
-                    Movie.create(movie);
+                    delete movie.id; // make sure movie doesn't have any id
+                    Movie.findOne({where: {imdb_id: movie.imdb_id}}).then(dbMovie => {
+                        if (dbMovie) {
+                            dbMovie.update(movie).then(() => {
+                                this.notySuccess("Updated", `${dbMovie.title} has been updated`);
+                                this.loadData();
+                            });
+                        } else {
+                            Movie.create(movie).then(() => {
+                                this.notySuccess("Created", "New movie has been added to the collection");
+                                this.loadData();
+                            });
+                        }
+                    });
+                    //Movie.create(movie).then(() => this.loadData());
+                });
+            },
+            notyError(title, text) {
+                this.$notify({
+                    group: "notification",
+                    type: "warn",
+                    title: title,
+                    text: text,
+                });
+            },
+            notySuccess(title, text) {
+                this.$notify({
+                    group: "notification",
+                    type: "success",
+                    title: title,
+                    text: text,
                 });
             }
         }
@@ -123,6 +146,7 @@
         top: 56px;
         left: 0;
         border-right: 1px solid #000;
+        overflow-y: scroll;
     }
 
     .grid {
@@ -133,4 +157,12 @@
         top: 56px;
         overflow-y: scroll;
     }
+
+    .main-notification {
+        margin-bottom: 30px !important;
+    }
 </style>
+<style>
+    
+</style>
+

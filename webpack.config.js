@@ -2,6 +2,10 @@ module.exports = {
 
     watch: true,
 
+    watchOptions: {
+        ignored: 'movie.db',
+    },
+
     target: 'electron',
 
     // externals: [nodeExternals()],

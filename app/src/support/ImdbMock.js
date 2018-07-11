@@ -22,7 +22,7 @@ module.exports = {
                     R.defaultTo([""])
                 );
                 return {
-                    id: data.id,
+                    imdb_id: data.id,
                     thumbnail_url: parseThumbnailUrl(data.i),
                     title: data.l,
                     year: data.y,

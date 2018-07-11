@@ -5,7 +5,7 @@ const path = require('path');
 const {app, BrowserWindow, ipcMain} = electron
 
 // Let electron reloads by itself when webpack watches changes in ./app/
-require('electron-reload')(__dirname)
+require('electron-reload')(path.resolve(__dirname, "app"))
 
 const db = new DataLayer(path.resolve(__dirname, "movie.db"));
 

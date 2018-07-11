@@ -8,14 +8,12 @@
         @ok="handleOkClicked">
         <b-row>
             <b-col>
-                <b-nav-form>
                     <b-input-group class="mr-2">
                         <b-input-group-text slot="prepend">
                             <font-awesome-icon icon="search" />
                         </b-input-group-text>
                         <b-form-input v-model="searchName" type="text" placeholder="Name ..."></b-form-input>
                     </b-input-group>
-                </b-nav-form>
             </b-col>
         </b-row>
         <b-row class="mt-2" v-if="!movie">
@@ -36,6 +34,16 @@
                 </b-col>
                 <b-col>
                     <h3>{{movie.title}}</h3>
+                    <template v-if="detailLoading">
+                        <p class="text-center">
+                            <font-awesome-icon icon="sun" spin /> Loading detail ...
+                        </p>
+                    </template>
+                    <template v-else>
+                        <p>{{movie.description}}</p>
+                        <p><strong>Genre</strong>: {{movie.genre}}</p>
+                        <p><strong>Stars</strong>: {{movie.star}}</p>
+                    </template>
                 </b-col>
             </b-row>
         </b-card>
@@ -44,7 +52,7 @@
 
 <script>
 
-import Imdb from "../support/ImdbMock"
+import Imdb from "../support/Imdb"
 import MovieGridView from "./MovieGridView.vue"
 
 export default {
@@ -64,9 +72,10 @@ export default {
     },
     data: () => ({
         searchCooldown: null,
-        searchName: "gt",
+        searchName: "",
         movies: [],
-        movie: null
+        movie: null,
+        detailLoading: false
     }),
     methods: {
         show() {
@@ -74,13 +83,25 @@ export default {
         },
         search() {
             this.movie = null;
-            Imdb.search(this.searchName)
-            .then(movies => {
-                this.movies = movies;
-            })
+            this.movies = [];
+            if (this.searchName) {
+                Imdb.search(this.searchName)
+                .then(movies => {
+                    this.movies = movies;
+                })
+            }
         },
         selectMovie(movie) {
             this.movie = movie;
+            console.log(movie);
+            this.detailLoading = true;
+            Imdb.getById(movie.imdb_id).then(movie => {
+                this.movie = movie;
+                console.log(movie);
+                this.detailLoading = false;
+            }).catch(e => {
+                console.log(e);
+            });
         },
         handleOkClicked() {
             this.$emit("movie-select", this.movie);

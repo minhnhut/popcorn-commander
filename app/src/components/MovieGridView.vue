@@ -37,7 +37,7 @@ export default {
             this.$emit("item-click", movie);
         },
         displayStars: R.compose(
-            R.join(", "),
+            // R.join(", "),
             R.defaultTo([]),
             R.prop('star')
         )

@@ -23,14 +23,35 @@ class MovieRepository extends BaseRepository {
             },
             year: {
                 type: Sequelize.STRING
-            }
+            },
+            imdb_id: {
+                type: Sequelize.STRING
+            },
+            description: {
+                type: Sequelize.STRING
+            },
+            star: {
+                type: Sequelize.NUMERIC
+            },
+            genre: {
+                type: Sequelize.STRING
+            },
+            rating: {
+                type: Sequelize.STRING
+            },
+            reviewStar: {
+                type: Sequelize.STRING
+            },
+            duration: {
+                type: Sequelize.STRING
+            },
         };
     }
 
     meta() {
         return {
             tableName: "movies",
-            timestamps: false
+            timestamps: true
         };
     }
 }
