@@ -6,7 +6,7 @@
                 <movie-detail :movie="movie" v-if="movie" />
             </div>
             <div class="grid bg-light">
-                <movie-grid-view :movies="movies" :selected-movie="movie" @item-click="viewMovieDetail" />
+                <movie-grid-view :movies="movies" :selected-movie="movie" @item-click="viewMovieDetail" @download-click="updateDownloadLinkForMovie" />
             </div>
         </b-row>
                 
@@ -18,13 +18,14 @@
 
 <script>
     import BottomStatusBar from "./components/BottomStatusBar.vue"
-    import MovieGridView from "./components/MovieGridView.vue"
+    import MovieGridView from "./components/MasterMovieGridView.vue"
     import MovieDetail from "./components/MovieDetail.vue"
     import NavBar from "./components/NavBar.vue"
     import ManualInsertModal from "./components/ManualInsertModal.vue"
     import { ipcRenderer } from 'electron'
     import DataLayer from './dal/DataLayer'
     import Vue from 'vue'
+    import FSharePhim from './support/FSharePhim'
     // import R from 'ramda'
 
     // With shell.openExternal(url) is how
@@ -105,17 +106,48 @@
                     Movie.findOne({where: {imdb_id: movie.imdb_id}}).then(dbMovie => {
                         if (dbMovie) {
                             dbMovie.update(movie).then(() => {
-                                this.notySuccess("Updated", `${dbMovie.title} has been updated`);
+                                this.notySuccess(`${dbMovie.title} - Updated`, `${dbMovie.title} has been updated`);
                                 this.loadData();
                             });
                         } else {
                             Movie.create(movie).then(() => {
-                                this.notySuccess("Created", "New movie has been added to the collection");
+                                this.notySuccess(`${dbMovie.title} - Created`, "New movie has been added to the collection");
                                 this.loadData();
                             });
                         }
                     });
                     //Movie.create(movie).then(() => this.loadData());
+                });
+            },
+            updateDownloadLinkForMovie(movie) {
+                const filter720pOnly = (link) => {
+                    return link.quality.indexOf("720p") !== -1 && link.filename.toLowerCase().indexOf("bluray") !== -1;
+                }
+                FSharePhim.search(movie.title).then(url => {
+                    FSharePhim.getByUrl(url, filter720pOnly).then(links => {
+                        FSharePhim.getFshareUrl(links[0].download_url).then(url => {
+                            console.log("Found Fshare link: " + url);
+                            // prepare link data
+                            const link = links[0];
+                            link.download_url = url;
+                            link.movie_id = movie.id;
+                            const notySuccess = () => this.notySuccess(`${movie.title} - Updated`, "Fetched FShare link successfully from Fsharephim.com.");
+                            
+                            DataLayer.exec(Db => {
+                                const Download = Db.getEntity("Download");
+                                Download.findOne({where: {download_url: url}})
+                                .then(downloadRecord => {
+                                    if (!downloadRecord) {
+                                        Download.create(link).then(() => {
+                                            notySuccess();
+                                        });
+                                    } else {
+                                        notySuccess();
+                                    }
+                                })
+                            });
+                        });
+                    })
                 });
             },
             notyError(title, text) {

@@ -24,26 +24,39 @@ module.exports = {
             
         });
     },
-    getByUrl(detailUrl)
+    getByUrl(detailUrl, priorityFilter)
     {
         return new Promise((resolve, reject) => {
             axios.get(detailUrl)
             .then(res => {
                 const $ = cheerio.load(res.data);
-                let links = [];
+                let rawLinks = [];
+                const trimProp = R.compose(
+                    R.trim,
+                    R.prop
+                );
+                const cleanUpLinkObject = (object) => {
+                    R.forEach(
+                        (key) => object[key] = trimProp(key, object),
+                        R.keys(object)
+                    )
+                    return object;
+                }
                 $(".links_table .fix-table table tbody tr").each(function() {
                     const downloadLinkTag = $($(this).find("td").get(0)).find("a");
                     const serverType = $($(this).find("td").get(1)).text().trim();
-                    const quality = $($(this).find("td").get(2)).text();
+                    const filename = $($(this).find("td").get(2)).text();
+                    const quality = $($(this).find("td").get(3)).text();
                     if (serverType == "fshare.vn") {
-                        links.push({
-                            downloadUrl: downloadLinkTag.attr("href"),
-                            size: downloadLinkTag.text(),
+                        const link = {
+                            download_url: downloadLinkTag.attr("href"),
+                            size: downloadLinkTag.find(".face-secondary").text(),
+                            filename: filename,
                             quality: quality
-                        });
+                        };
+                        rawLinks.push(cleanUpLinkObject(link));
                     }
                 });
-                console.log(links);
                 const getTwoParts = R.split(" ");
                 const convertTextToValue = x => {
                     switch (x) {
@@ -58,18 +71,39 @@ module.exports = {
                     R.map(parseFloat),
                     R.map(x => convertTextToValue(x)),
                     getTwoParts,
-                    R.prop("size")
+                    R.trim
+                    // R.prop("size")
                 );
                 const calculateSizeValues = R.map(x => {
-                    x.sizeValue = calculateValueFromSize(x.size);
+                    x.size_value = calculateValueFromSize(x.size);
+                    return x;
                 });
-                links = calculateSizeValues(links);
-                R.sort((a,b) => { return a.sizeValue - b.sizeValue});
-                // WIP
-                // TODO find optimum filesize
+                const sortBySizeAsc = R.sort((a,b) => { return a.size_value - b.size_value});
+                processedAllLinks = calculateSizeValues(rawLinks);
+                let links = [];
+                if (priorityFilter) {
+                    const filterThenSortBySize = R.compose(sortBySizeAsc, R.filter(priorityFilter));
+                    links = filterThenSortBySize(processedAllLinks);
+                }
+                if (links.length == 0) {
+                    links = sortBySizeAsc(processedAllLinks);
+                }
+                resolve(links);
             })
             .catch(e => {
                 reject(e);  
+            });
+        });
+    },
+    getFshareUrl(downloadLink) {
+        return new Promise((resolve, reject) => {
+            axios.get(downloadLink)
+            .then(res => {
+                const $ = cheerio.load(res.data);
+                resolve($(".boton.reloading a").attr("href"));
+            })
+            .catch(e => {
+                reject(e);
             });
         });
     }

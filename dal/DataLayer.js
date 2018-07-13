@@ -1,9 +1,13 @@
 const Sequelize = require('sequelize');
 const operatorsAliases = require('./OperatorsAliases');
 const MovieRepository = require('./MovieRepository');
+const DownloadRepository = require('./DownloadRepository');
+const SettingRepository = require('./SettingRepository');
 
 const repositories = {
-    MovieRepository
+    MovieRepository,
+    DownloadRepository,
+    SettingRepository
 };
 
 const STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
