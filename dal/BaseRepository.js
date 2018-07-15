@@ -23,8 +23,7 @@ class BaseRepository {
         return {};
     }
 
-    relationship() {
-        return {};
+    relationship(getEntity) {
     }
 
     findOne() {

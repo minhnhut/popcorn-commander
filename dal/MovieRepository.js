@@ -54,6 +54,11 @@ class MovieRepository extends BaseRepository {
             timestamps: true
         };
     }
+
+    relationship(getEntity) {
+        const Download = getEntity("Download")
+        this.entity.hasMany(Download, {foreignKey: 'movie_id', targetKey: 'id'});
+    }
 }
 
 module.exports = MovieRepository

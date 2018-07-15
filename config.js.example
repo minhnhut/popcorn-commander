@@ -1,0 +1,13 @@
+const path = require("path")
+module.exports = {
+    "dbPath": path.resolve(__dirname, "movie.db"),
+    "fshareLogin": {
+        "username": "your email",
+        "password": "password"
+    },
+    "downloadFolderPath": path.resolve(__dirname, "downloads"),
+    "downloaderOptions": {
+        "maxConnections": 16,
+        "forceMultipleConnections": true
+    }
+}

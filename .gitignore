@@ -37,4 +37,8 @@ jspm_packages
 .node_repl_history
 
 app/build/
+
+# Exclude application's generated content
 dist
+downloads
+config.js

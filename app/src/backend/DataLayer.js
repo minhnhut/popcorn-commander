@@ -1,9 +1,7 @@
 import {remote, ipcRenderer} from "electron"
-import { exec } from "child_process";
-
-const dbHandler = remote.getGlobal("dbHandler");
-const dbExec = remote.getGlobal("dbExec");
-const db = remote.getGlobal("db");
+const backend = remote.getGlobal("backend");
+const dbExec = backend.dbExec;
+const db = backend.db;
 
 export default {
 

@@ -106,5 +106,23 @@ module.exports = {
                 reject(e);
             });
         });
+    },
+    getFshareUrlForMovie(movie) {
+        const filter720pOnly = (link) => {
+            return link.quality.indexOf("720p") !== -1 && link.filename.toLowerCase().indexOf("bluray") !== -1;
+        }
+        return new Promise((resolve, reject) => {
+            this.search(movie.title).then(url => {
+                this.getByUrl(url, filter720pOnly).then(links => {
+                    this.getFshareUrl(links[0].download_url).then(url => {
+                        // prepare link data
+                        const link = links[0];
+                        link.download_url = url;
+                        link.movie_id = movie.id;
+                        resolve(link);
+                    });
+                });
+            });
+        });
     }
 }

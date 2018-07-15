@@ -46,6 +46,29 @@ class DataLayer {
                 this.repositories[repo.entityName] = repo;
             // }
         }
+        for (const entityName in this.repositories) {
+            this.repositories[entityName].relationship((entityName) => {
+                return this.getEntity(entityName);
+            });
+        }
+        const Movie = this.getEntity("Movie");
+        const Download = this.getEntity("Download");
+        Movie.findAll({
+            where: {
+                title: {
+                    ":like": "%"
+                }
+            },
+            order: [
+                ["createdAt", "desc"]
+            ],
+            include: [Download]
+        }).then(result => {
+            console.log(result)
+            result.forEach(x => {
+                console.log(x.getDownloads().then);
+            })
+        });
     }
 
     getRepository(name) {

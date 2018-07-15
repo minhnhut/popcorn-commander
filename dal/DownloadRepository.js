@@ -32,6 +32,9 @@ class DownloadRepository extends BaseRepository {
             },
             size_value: {
                 type: Sequelize.INTEGER
+            },
+            direct_url: {
+                type: Sequelize.STRING
             }
         };
     }

@@ -6,7 +6,12 @@
                 <movie-detail :movie="movie" v-if="movie" />
             </div>
             <div class="grid bg-light">
-                <movie-grid-view :movies="movies" :selected-movie="movie" @item-click="viewMovieDetail" @download-click="updateDownloadLinkForMovie" />
+                <movie-grid-view
+                    :movies="movies"
+                    :selected-movie="movie"
+                    @item-click="viewMovieDetail"
+                    @fetch-download-click="updateMovieDownloadLink"
+                    @download-click="startMovieDownload" />
             </div>
         </b-row>
                 
@@ -23,9 +28,11 @@
     import NavBar from "./components/NavBar.vue"
     import ManualInsertModal from "./components/ManualInsertModal.vue"
     import { ipcRenderer } from 'electron'
-    import DataLayer from './dal/DataLayer'
+    import DataLayer from './backend/DataLayer'
+    import Downloader from './backend/Downloader'
     import Vue from 'vue'
     import FSharePhim from './support/FSharePhim'
+    const R = require('ramda')
     // import R from 'ramda'
 
     // With shell.openExternal(url) is how
@@ -66,6 +73,7 @@
             loadData() {
                 DataLayer.exec(Db => {
                     const Movie = Db.getEntity("Movie");
+                    const Download = Db.getEntity("Download");
                     Movie.findAndCountAll({
                         where: {
                             title: {
@@ -78,6 +86,13 @@
                     }).then(result => {
                         this.stats.total = result.count;
                         this.movies = result.rows;
+                        const eagerLoad = R.forEach(movie => {
+                            Download.findAll({where: {movie_id: movie.id}})
+                            .then(downloads => {
+                                Vue.set(movie, "downloads", downloads)
+                            });
+                        });
+                        eagerLoad(this.movies);
                     });
                     // Db.getRepository("Movie").findAll({
                     //     where: {
@@ -106,12 +121,12 @@
                     Movie.findOne({where: {imdb_id: movie.imdb_id}}).then(dbMovie => {
                         if (dbMovie) {
                             dbMovie.update(movie).then(() => {
-                                this.notySuccess(`${dbMovie.title} - Updated`, `${dbMovie.title} has been updated`);
+                                this.notySuccess(`${movie.title} - Updated`, `${dbMovie.title} has been updated`);
                                 this.loadData();
                             });
                         } else {
                             Movie.create(movie).then(() => {
-                                this.notySuccess(`${dbMovie.title} - Created`, "New movie has been added to the collection");
+                                this.notySuccess(`${movie.title} - Created`, "New movie has been added to the collection");
                                 this.loadData();
                             });
                         }
@@ -119,35 +134,59 @@
                     //Movie.create(movie).then(() => this.loadData());
                 });
             },
-            updateDownloadLinkForMovie(movie) {
-                const filter720pOnly = (link) => {
-                    return link.quality.indexOf("720p") !== -1 && link.filename.toLowerCase().indexOf("bluray") !== -1;
+            attachMovieDownloader(movie, download) {
+                Vue.set(movie, "downloader", {
+                    status: "not_yet",
+                    progress: {}
+                })
+
+                console.log("download: " + download.download_url);
+                const startDownload = (directUrl) => {
+                    Downloader.makeDownloaderFromDirectUrl(directUrl, (status, progress) => movie.downloader = {status, progress});
                 }
-                FSharePhim.search(movie.title).then(url => {
-                    FSharePhim.getByUrl(url, filter720pOnly).then(links => {
-                        FSharePhim.getFshareUrl(links[0].download_url).then(url => {
-                            console.log("Found Fshare link: " + url);
-                            // prepare link data
-                            const link = links[0];
-                            link.download_url = url;
-                            link.movie_id = movie.id;
-                            const notySuccess = () => this.notySuccess(`${movie.title} - Updated`, "Fetched FShare link successfully from Fsharephim.com.");
-                            
-                            DataLayer.exec(Db => {
-                                const Download = Db.getEntity("Download");
-                                Download.findOne({where: {download_url: url}})
-                                .then(downloadRecord => {
-                                    if (!downloadRecord) {
-                                        Download.create(link).then(() => {
-                                            notySuccess();
-                                        });
-                                    } else {
-                                        notySuccess();
-                                    }
-                                })
+                
+                if (!download.direct_url) {
+                    Downloader.getDirectUrlFromFshareUrl(download.download_url).then(directUrl => {
+                        DataLayer.exec(Db => {
+                            const Download = Db.getEntity("Download");
+                            Download.update({direct_url: directUrl}, {where: {id: download.id}});
+                        });
+                        startDownload(directUrl);
+                    });
+                } else {
+                    startDownload(download.direct_url);
+                }
+                
+            },
+            startMovieDownload(movie) {
+                if (movie.downloads && movie.downloads[0]) {
+                    this.attachMovieDownloader(movie, movie.downloads[0]);
+                }
+            },
+            updateMovieDownloadLink(movie) {
+                DataLayer.exec(Db=> {
+                    const Download = Db.getEntity("Download");
+                    Download.findAll({where: {'movie_id': movie.id}})
+                    .then(downloads => {
+                        // Delete all previous downloads
+                        Download.destroy({where: {movie_id: movie.id}}).then(() => {
+                            // Get new fshare link
+                            FSharePhim.getFshareUrlForMovie(movie).then(link => {
+                                const url = link.download_url;
+                                console.log("Found Fshare link: " + url);
+                                const notySuccess = () => this.notySuccess(`${movie.title} - Updated`, "Fetched FShare link successfully from Fsharephim.com.");
+                                Download.create(link).then(() => {
+                                    // Notify user that is is completed
+                                    notySuccess();
+                                    Download.findOne({where: {download_url: url}}).then(download => {
+                                        // Let's download begin
+                                        this.attachMovieDownloader(movie, download);
+                                    });
+                                });
                             });
                         });
-                    })
+                        
+                    });
                 });
             },
             notyError(title, text) {
