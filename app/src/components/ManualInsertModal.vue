@@ -129,7 +129,10 @@ export default {
             });
         },
         handleOkClicked() {
-            this.$emit("movie-select", this.movie);
+            this.$emit("movie-select", {
+                movie: this.movie,
+                downloads: this.downloads
+            });
         },
         openTrailer() {
             shell.openExternal(this.movie.trailer_url);

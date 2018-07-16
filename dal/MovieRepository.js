@@ -10,7 +10,8 @@ class MovieRepository extends BaseRepository {
         return {
             id: {
                 type: Sequelize.INTEGER,
-                primaryKey: true
+                primaryKey: true,
+                autoIncrement: true
             },
             title: {
                 type: Sequelize.STRING

@@ -1,6 +1,6 @@
 <template>
     <div id='app'>
-        <nav-bar @add-new-click="showManualInsertModal" />
+        <nav-bar @search="handleNavBarSearch" @add-new-click="showManualInsertModal" />
         <b-row>
             <div class="detail p-1 table-dark">
                 <movie-detail :movie="movie" v-if="movie" />
@@ -55,6 +55,7 @@
         },
         data: () => ({
             search: "",
+            searchCooldown: null,
             movies: [],
             stats: {
                 total: 0,
@@ -63,17 +64,10 @@
             movie: null,
             downloadPool: {}
         }),
-        watch: {
-            search: function()  {
-                console.log(this.search);
-                this.test();
-            }
-        },
         mounted() {
             ipcRenderer.on("backend-update-link", (event, {downloadPool, needRefresh}) => {
                 // this.downloadPool = downloadPool;
                 Vue.set(this, "downloadPool", downloadPool);
-                console.log(downloadPool);
                 if (needRefresh && needRefresh.length) {
                     DataLayer.exec(Db => {
                         const Movie = Db.getEntity("Movie");
@@ -111,15 +105,31 @@
             link(url) {
                 shell.openExternal(url)
             },
+            handleNavBarSearch(keywords) {
+                this.search = keywords;
+                if (this.searchCooldown) {
+                    window.clearTimeout(this.searchCooldown);
+                }
+                this.searchCooldown = window.setTimeout(() => {
+                    this.loadData();       
+                },500)
+            },
             loadData() {
+
+                // make where clause from keywords
+                let where = [];
+                this.search.split(" ").forEach(keyword => {
+                    where.push({title: {
+                        ":like": "%" + keyword + "%"
+                    }})
+                })
+
                 DataLayer.exec(Db => {
                     const Movie = Db.getEntity("Movie");
                     const Download = Db.getEntity("Download");
                     Movie.findAndCountAll({
                         where: {
-                            title: {
-                                ":like": this.search + "%"
-                            }
+                            ":or": where
                         },
                         order: [
                             ["createdAt", "desc"]
@@ -147,9 +157,10 @@
             showManualInsertModal() {
                 this.$refs.manualInsertModal.show();
             },
-            insertMovie(movie) {
+            insertMovie({movie, downloads}) {
                 DataLayer.exec(Db => {
                     const Movie = Db.getEntity("Movie");
+                    const Download = Db.getEntity("Download");
                     delete movie.id; // make sure movie doesn't have any id
                     Movie.findOne({where: {imdb_id: movie.imdb_id}}).then(dbMovie => {
                         if (dbMovie) {
@@ -158,7 +169,12 @@
                                 this.loadData();
                             });
                         } else {
-                            Movie.create(movie).then(() => {
+                            Movie.create(movie).then((movie) => {
+                                if (downloads && downloads[0]) {
+                                    let download = downloads[0].link;
+                                    download.movie_id = movie.id;
+                                    Download.create(download);
+                                }
                                 this.notySuccess(`${movie.title} - Created`, "New movie has been added to the collection");
                                 this.loadData();
                             });
