@@ -16,7 +16,7 @@ module.exports = {
                         return false;
                     }
                 });
-                reject("Not found");
+                resolve("not_found");
             })
             .catch(e => {
                 reject(e);  
@@ -51,6 +51,7 @@ module.exports = {
                     if (serverType == "fshare.vn" &&
                         quality.toLowerCase().indexOf("subtitle") === -1) {
                         const link = {
+                            source: "FsharePhim",
                             download_url: downloadLinkTag.attr("href"),
                             size: downloadLinkTag.find(".face-secondary").text(),
                             filename: filename,
@@ -109,21 +110,22 @@ module.exports = {
             });
         });
     },
-    getFshareUrlForMovie(movie) {
-        const filter720pOnly = (link) => {
-            return link.quality.indexOf("720p") !== -1 && link.filename.toLowerCase().indexOf("bluray") !== -1;
-        }
+    getFshareUrlForMovie(movie, filter) {
         return new Promise((resolve, reject) => {
             this.search(movie.title).then(url => {
-                this.getByUrl(url, filter720pOnly).then(links => {
-                    this.getFshareUrl(links[0].download_url).then(url => {
-                        // prepare link data
-                        const link = links[0];
-                        link.download_url = url;
-                        link.movie_id = movie.id;
-                        resolve(link);
+                if (url === "not_found") {
+                    resolve(null);
+                } else {
+                    this.getByUrl(url, filter).then(links => {
+                        this.getFshareUrl(links[0].download_url).then(url => {
+                            // prepare link data
+                            const link = links[0];
+                            link.download_url = url;
+                            link.movie_id = movie.id;
+                            resolve(link);
+                        }).catch(reject);
                     }).catch(reject);
-                }).catch(reject);
+                }
             }).catch(reject);
         });
     }

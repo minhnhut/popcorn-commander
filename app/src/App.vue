@@ -35,7 +35,7 @@
     import DataLayer from './backend/DataLayer'
     import Downloader from './backend/Downloader'
     import Vue from 'vue'
-    import FSharePhim from './support/FSharePhim'
+    import FShareLinkFinder from './support/FshareLinkFinder'
     // import DownloadPool from './support/DownloadPool'
     const R = require('ramda')
     // import R from 'ramda'
@@ -171,7 +171,7 @@
                         } else {
                             Movie.create(movie).then((movie) => {
                                 if (downloads && downloads[0]) {
-                                    let download = downloads[0].link;
+                                    let download = downloads[0];
                                     download.movie_id = movie.id;
                                     Download.create(download);
                                 }
@@ -216,24 +216,28 @@
                     const Download = Db.getEntity("Download");
                     Download.findAll({where: {'movie_id': movie.id}})
                     .then(downloads => {
-                        Movie.update({is_download: 0}, {where: {id: movie.id}});
+                        Movie.update({is_downloaded: 0}, {where: {id: movie.id}});
                         // no need to wait, lets change it locally
-                        movie.is_download = false;
+                        Vue.set(movie, "is_downloaded", false);
                         // Delete all previous downloads
                         Download.destroy({where: {movie_id: movie.id}}).then(() => {
                             // Get new fshare link
-                            FSharePhim.getFshareUrlForMovie(movie).then(link => {
-                                const url = link.download_url;
-                                console.log("Found Fshare link: " + url);
-                                const notySuccess = () => this.notySuccess(`${movie.title} - Updated`, "Fetched FShare link successfully from Fsharephim.com.");
-                                Download.create(link).then(() => {
-                                    // Notify user that is is completed
-                                    notySuccess();
-                                    Download.findOne({where: {download_url: url}}).then(download => {
-                                        // Let's download begin
-                                        this.attachMovieDownloader(movie, download);
+                            FShareLinkFinder.getFshareUrlForMovie(movie).then(links => {
+                                if (links.length === 0) {
+                                    this.notyError(movie.title, "Scanned all available sources. But no link was found.");
+                                } else {
+                                    const link = links[0];
+                                    const url = link.download_url;
+                                    const notySuccess = () => this.notySuccess(`${movie.title} - Updated`, "Looked and fetched new download link.");
+                                    Download.create(link).then(() => {
+                                        // Notify user that is is completed
+                                        notySuccess();
+                                        Download.findOne({where: {download_url: url}}).then(download => {
+                                            // Let's download begin
+                                            this.attachMovieDownloader(movie, download);
+                                        });
                                     });
-                                });
+                                }
                             });
                         });
                     });

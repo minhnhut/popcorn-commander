@@ -47,8 +47,10 @@
 
                         <p v-if="lookingForDownload"><font-awesome-icon icon="sun" spin /> Looking for fshare links ...</p>
                         <template v-else>
-                            <p v-if="downloads.length" class="text-success"><font-awesome-icon icon="check" /> Found link for this movie on FSharePhim</p>
-                            <p v-else class="text-danger"><font-awesome-icon icon="times" /> Link for this movie can not be found</p>
+                            <p v-if="!downloads.length" class="text-danger"><font-awesome-icon icon="times" /> Link for this movie can not be found</p>
+                            <template v-else>
+                                <p v-for="(sourceName, index) in foundFlag" :key="index" class="text-success"><font-awesome-icon icon="check" /> Download link found in {{sourceName}}</p>
+                            </template>
                         </template>
                     </template>
                 </b-col>
@@ -61,7 +63,7 @@
 
 import Imdb from "../support/Imdb"
 import MovieGridView from "./MovieGridView.vue"
-import FSharePhim from "../support/FSharePhim"
+import FshareLinkFinder from "../support/FshareLinkFinder"
 var shell = require('electron').shell;
 
 export default {
@@ -86,7 +88,8 @@ export default {
         movie: null,
         detailLoading: false,
         lookingForDownload: false,
-        downloads: []
+        downloads: [],
+        foundFlag: []
     }),
     methods: {
         show() {
@@ -108,15 +111,19 @@ export default {
         selectMovie(movie) {
             this.movie = movie;
             this.downloads = [];
+            this.foundFlag = [];
             this.lookingForDownload = true;
-            FSharePhim.getFshareUrlForMovie(movie).then(link => {
-                this.downloads.push({
-                    "source": "FsharePhim",
-                    link
-                });
+            FshareLinkFinder.getFshareUrlForMovie(movie).then(links => {
+                console.log(links);
+                links.forEach(link => {
+                    // each plugins only provide 1 url
+                    this.foundFlag.push(link.source);
+                    this.downloads.push(link);
+                })
                 this.lookingForDownload = false;
             })
-            .catch(() => {
+            .catch((e) => {
+                console.log(e);
                 // should I do something? nope
                 this.lookingForDownload = false;
             });
