@@ -2,6 +2,7 @@
     <b-navbar variant="dark" type="dark">
         <b-navbar-brand>Commander</b-navbar-brand>
         <b-nav-form>
+            <download-folder-button class="mr-2" />
             <b-input-group class="mr-2">
                 <b-input-group-text slot="prepend" class="bg-secondary text-light">
                     <font-awesome-icon icon="search" />
@@ -12,3 +13,13 @@
         </b-nav-form>
     </b-navbar>
 </template>
+
+<script>
+import DownloadFolderButton from "./NavBar/DownloadFolderButton.vue"
+
+export default {
+    components: {
+        DownloadFolderButton
+    }
+}
+</script>

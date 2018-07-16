@@ -4,22 +4,15 @@
             <img :src="data.item.thumbnail_url" alt="" width="50" height="73">
         </template>
         <template slot="title" slot-scope="data">
-            <h6>{{data.item.title}} <small v-if="data.item.year">({{data.item.year}})</small></h6>
-            <p><font-awesome-icon icon="users" /> {{displayStars(data.item)}}</p>
-            <p>{{ displayStatus(data.item) }}</p>
-            <template v-if="data.item.downloader && data.item.downloader.progress">
-                <p>{{data.item.downloader.progress.percent}}% - {{displayHumanReadableSpeed(data.item.downloader.progress.bytesPerSecond)}}</p>
-                <b-progress height="2px" :value="data.item.downloader.progress.percent" :max="100" class="mb-3"></b-progress>
-            </template>
-            <div class="toolbar">
-                <template v-if="data.item.downloads">
-                    <b-btn variant="primary" @click.stop="handleDownloadClick(data.item)"><font-awesome-icon icon="play" /></b-btn>
-                    <b-btn variant="default" @click.stop="handleFetchDownloadUrl(data.item)"><font-awesome-icon icon="sync" /></b-btn>
-                </template>
-                <template v-else>
-                    <b-btn variant="primary" @click.stop="handleFetchDownloadUrl(data.item)"><font-awesome-icon icon="download" /></b-btn>
-                </template>
-            </div>
+            <h6>{{data.item.title}} <small v-if="data.item.year">({{data.item.year}})</small> <font-awesome-icon v-if="data.item._loading" icon="sync" spin /></h6>
+            <actors :movie="data.item" />
+            <download-status :movie="data.item" :downloader="getDownloader(data.item)" />
+            <toolbar
+                :movie="data.item"
+                @fetch-download-click="handleFetchDownloadUrl(data.item)"
+                @start-download-click="handleDownloadClick(data.item)"
+                @remove-click="handleRemove(data.item)"
+            />
         </template>
 
     </b-table>
@@ -29,22 +22,36 @@
 const R = require("ramda")
 import Vue from "vue"
 import MovieGridView from "./MovieGridView.vue"
-const {utils} = require("rapid-downloader")
+import Actors from "./MasterMovieGrid/Actors.vue"
+import DownloadStatus from "./MasterMovieGrid/DownloadStatus.vue"
+import Toolbar from "./MasterMovieGrid/Toolbar.vue"
 
 export default {
     extends: MovieGridView,
+    components: {
+        Actors,
+        DownloadStatus,
+        Toolbar
+    },
+    props: {
+        downloadPool: Object
+    },
     methods: {
-        displayStatus: R.compose(
-            R.defaultTo(""),
-            R.prop('status')
-        ),
         handleDownloadClick(movie) {
             this.$emit("download-click", movie);
         },
         handleFetchDownloadUrl(movie) {
             this.$emit("fetch-download-click", movie);
         },
-        displayHumanReadableSpeed: utils.dynamicSpeedUnitDisplay
+        handleRemove(movie) {
+            this.$emit("remove-click", movie);
+        },
+        getDownloader(movie) {
+            if (this.downloadPool && this.downloadPool[movie.id]) {
+                return this.downloadPool[movie.id];
+            }
+            return null;
+        },
     }
 }
 </script>
@@ -53,7 +60,7 @@ export default {
     .table-movie tr td {
         position: relative;
     }
-    .table-movie tr:hover .toolbar {
+    .table-movie tr.table-active .toolbar, .table-movie tr:hover .toolbar {
         display: block;
     }
     .toolbar {

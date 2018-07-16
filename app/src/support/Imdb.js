@@ -91,8 +91,8 @@ module.exports = {
                 const reviewStar = $("[itemprop='ratingValue']").text();
                 // description
                 const description = R.trim($(".summary_text").text());
-    
-                resolve ({
+
+                let movie = {
                     imdb_id: id,
                     title: title,
                     year: year,
@@ -102,12 +102,39 @@ module.exports = {
                     description: description,
                     reviewStar: reviewStar,
                     star: star,
-                    thumbnail_url: thumbnail
-                })
+                    thumbnail_url: thumbnail,
+                    trailer_url: ""
+                };
+
+                const trailerPageUrl = $("[itemprop='trailer']").attr('href');
+                if (trailerPageUrl) {
+                    movie.trailer_url = trailerPageUrl;
+                    // this.getTrailerMp4Url(trailerPageUrl)
+                    // .then(url => {
+                    //     movie.trailer_url = url;
+                    //     resolve(movie);
+                    // }).catch(() => {
+                    //     // something wrong, forget it
+                    //     resolve(movie);
+                    // });
+                }
+                resolve(movie);
             })
             .catch(e => {
                 reject(e);  
             });
+        });
+    },
+    getTrailerMp4Url(trailerUrl) {
+        return new Promise((resolve, reject) => {
+            axios.get("https://www.imdb.com" + trailerUrl)
+            .then(res => {
+                const getVideoUrl = R.match(/\[{"definition":"360p","mimeType":"video\/mp4","videoUrl":"(.*?)"}/);
+                const result = getVideoUrl(res.data);
+                console.log(result);
+                resolve(result.length == 2 ? result[1] : "");
+            })
+            .catch(reject)
         });
     }
 }

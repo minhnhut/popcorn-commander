@@ -4,6 +4,9 @@ const getDirectUrlFromFshareUrl = backend.getDirectUrlFromFshareUrl;
 const makeDownloaderFromDirectUrl = backend.makeDownloaderFromDirectUrl;
 
 export default {
+    downloadFolderPath: backend.downloadFolderPath,
+    downloaderOptions: backend.downloaderOptions,
     getDirectUrlFromFshareUrl,
-    makeDownloaderFromDirectUrl
+    makeDownloaderFromDirectUrl,
+    registerDownloadPoolUpdateHandler: (handler) => ipcRenderer.on("download-pool-update", handler)
 }

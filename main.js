@@ -21,22 +21,12 @@ app.on('ready', () => {
         minWidth: 600
     })
     mainWindow.loadURL(`file://${__dirname}/app/index.html`)
-    ipcMain.on('request-download-fshare', (event, {id, url}) => {
-        const downloader = backend.makeDownloader(url);
-        download.on('progress', (progress) => {
-            event.sender.send('response-download-fshare', {
-                id,
-                progress,
-                status: "downloading"
-            });
+    
+    setInterval(() => {
+        mainWindow.webContents.send("backend-update-link", {
+            downloadPool: backend.downloadPool,
+            needRefresh: backend.needRefresh
         });
-        download.on('end', () => {
-            event.sender.send('response-download-fshare', {
-                id,
-                progress: {},
-                status: 'done'
-            });
-        });
-        downloader.start();
-    })
+        backend.flushState();
+    }, 500);
 })

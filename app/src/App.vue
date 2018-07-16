@@ -9,13 +9,16 @@
                 <movie-grid-view
                     :movies="movies"
                     :selected-movie="movie"
+                    :download-pool="downloadPool"
                     @item-click="viewMovieDetail"
                     @fetch-download-click="updateMovieDownloadLink"
-                    @download-click="startMovieDownload" />
+                    @download-click="startMovieDownload"
+                    @remove-click="showRemoveConfirm" />
             </div>
         </b-row>
                 
         <manual-insert-modal ref="manualInsertModal" @movie-select="insertMovie" />
+        <remove-movie-modal ref="removeConfirmModal" @ok="removeMovie" />
         <notifications group="notification" position="bottom right" class="main-notification" />
         <bottom-status-bar :downloaded="stats.downloaded" :total="stats.total" />
     </div>
@@ -27,11 +30,13 @@
     import MovieDetail from "./components/MovieDetail.vue"
     import NavBar from "./components/NavBar.vue"
     import ManualInsertModal from "./components/ManualInsertModal.vue"
+    import RemoveMovieModal from "./components/RemoveMovieModal.vue"
     import { ipcRenderer } from 'electron'
     import DataLayer from './backend/DataLayer'
     import Downloader from './backend/Downloader'
     import Vue from 'vue'
     import FSharePhim from './support/FSharePhim'
+    // import DownloadPool from './support/DownloadPool'
     const R = require('ramda')
     // import R from 'ramda'
 
@@ -45,7 +50,8 @@
             MovieGridView,
             MovieDetail,
             NavBar,
-            ManualInsertModal
+            ManualInsertModal,
+            RemoveMovieModal
         },
         data: () => ({
             search: "",
@@ -54,7 +60,8 @@
                 total: 0,
                 downloaded: 0
             },
-            movie: null
+            movie: null,
+            downloadPool: {}
         }),
         watch: {
             search: function()  {
@@ -63,7 +70,41 @@
             }
         },
         mounted() {
-            // this.showManualInsertModal();
+            ipcRenderer.on("backend-update-link", (event, {downloadPool, needRefresh}) => {
+                // this.downloadPool = downloadPool;
+                Vue.set(this, "downloadPool", downloadPool);
+                console.log(downloadPool);
+                if (needRefresh && needRefresh.length) {
+                    DataLayer.exec(Db => {
+                        const Movie = Db.getEntity("Movie");
+                        const Download = Db.getEntity("Download");
+                        Movie.findAll({
+                            where: {
+                                id: {
+                                    ":in": needRefresh
+                                }
+                            }
+                        }).then(movies => {
+                            const eagerLoad = R.forEach(movie => {
+                                Download.findAll({where: {movie_id: movie.id}})
+                                .then(downloads => {
+                                    Vue.set(movie, "downloads", downloads)
+                                    // movie.downloads = downloads
+                                });
+                            });
+                            console.log(movies);
+                            this.movies.forEach((thisMovie,index) => {
+                                movies.forEach(newMovie => {
+                                    if (thisMovie.id == newMovie.id) {
+                                        Vue.set(this.movies, index, newMovie);
+                                        // thisMovie = R.merge(thisMovie, newMovie);
+                                    }
+                                });
+                            });
+                        });
+                    })
+                }
+            })
             this.loadData();
         },
         methods: {
@@ -94,13 +135,6 @@
                         });
                         eagerLoad(this.movies);
                     });
-                    // Db.getRepository("Movie").findAll({
-                    //     where: {
-                    //         title: this.search
-                    //     }
-                    // }).then(data => {
-                    //     this.result = data;
-                    // });
                 });
             },
             viewMovieDetail(movie) {
@@ -108,7 +142,6 @@
                     this.movie._rowVariant = "";
                 }
                 Vue.set(movie, "_rowVariant", "active");
-                // movie._rowVariant = "info";
                 this.movie = movie;
             },
             showManualInsertModal() {
@@ -131,18 +164,13 @@
                             });
                         }
                     });
-                    //Movie.create(movie).then(() => this.loadData());
                 });
             },
             attachMovieDownloader(movie, download) {
-                Vue.set(movie, "downloader", {
-                    status: "not_yet",
-                    progress: {}
-                })
-
                 console.log("download: " + download.download_url);
                 const startDownload = (directUrl) => {
-                    Downloader.makeDownloaderFromDirectUrl(directUrl, (status, progress) => movie.downloader = {status, progress});
+                    Downloader.makeDownloaderFromDirectUrl(movie.id, directUrl);
+                    Vue.set(movie, "_loading", false);
                 }
                 
                 if (!download.direct_url) {
@@ -156,18 +184,25 @@
                 } else {
                     startDownload(download.direct_url);
                 }
-                
             },
             startMovieDownload(movie) {
+                Vue.set(movie, "_loading", true);
                 if (movie.downloads && movie.downloads[0]) {
                     this.attachMovieDownloader(movie, movie.downloads[0]);
+                } else {
+                    this.updateMovieDownloadLink(movie);
                 }
             },
             updateMovieDownloadLink(movie) {
+                Vue.set(movie, "_loading", true);
                 DataLayer.exec(Db=> {
+                    const Movie = Db.getEntity("Movie");
                     const Download = Db.getEntity("Download");
                     Download.findAll({where: {'movie_id': movie.id}})
                     .then(downloads => {
+                        Movie.update({is_download: 0}, {where: {id: movie.id}});
+                        // no need to wait, lets change it locally
+                        movie.is_download = false;
                         // Delete all previous downloads
                         Download.destroy({where: {movie_id: movie.id}}).then(() => {
                             // Get new fshare link
@@ -185,9 +220,23 @@
                                 });
                             });
                         });
-                        
                     });
                 });
+            },
+            showRemoveConfirm(movie) {
+                this.$refs.removeConfirmModal.show(movie);
+            },
+            removeMovie(movie) {
+                if (movie) {
+                    DataLayer.exec(Db => {
+                        const Movie = Db.getEntity("Movie");
+                        const Download = Db.getEntity("Download");
+                        Download.destroy({where: {movie_id: movie.id}});
+                        Movie.destroy({where: {id: movie.id}});
+                        this.loadData();
+                        this.notySuccess(movie.title, "Removed from your collection");
+                    });
+                }
             },
             notyError(title, text) {
                 this.$notify({
@@ -228,12 +277,25 @@
         top: 56px;
         overflow-y: scroll;
     }
-
+    
     .main-notification {
         margin-bottom: 30px !important;
     }
 </style>
+
 <style>
-    
+    ::-webkit-scrollbar {
+        width:  5px;
+        height: 100%;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        border-radius: 5px;
+        background: var(--gray);
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
 </style>
 

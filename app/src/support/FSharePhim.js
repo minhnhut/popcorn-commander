@@ -47,7 +47,9 @@ module.exports = {
                     const serverType = $($(this).find("td").get(1)).text().trim();
                     const filename = $($(this).find("td").get(2)).text();
                     const quality = $($(this).find("td").get(3)).text();
-                    if (serverType == "fshare.vn") {
+                    // make sure it is fshare, and didn't metion anything about subtitle
+                    if (serverType == "fshare.vn" &&
+                        quality.toLowerCase().indexOf("subtitle") === -1) {
                         const link = {
                             download_url: downloadLinkTag.attr("href"),
                             size: downloadLinkTag.find(".face-secondary").text(),
@@ -120,9 +122,9 @@ module.exports = {
                         link.download_url = url;
                         link.movie_id = movie.id;
                         resolve(link);
-                    });
-                });
-            });
+                    }).catch(reject);
+                }).catch(reject);
+            }).catch(reject);
         });
     }
 }
