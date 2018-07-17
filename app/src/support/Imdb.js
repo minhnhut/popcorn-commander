@@ -108,7 +108,7 @@ module.exports = {
 
                 const trailerPageUrl = $("[itemprop='trailer']").attr('href');
                 if (trailerPageUrl) {
-                    movie.trailer_url = trailerPageUrl;
+                    movie.trailer_url =  "https://www.imdb.com" + trailerPageUrl;
                     // this.getTrailerMp4Url(trailerPageUrl)
                     // .then(url => {
                     //     movie.trailer_url = url;
