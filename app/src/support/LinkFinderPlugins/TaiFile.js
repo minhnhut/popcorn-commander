@@ -121,7 +121,6 @@ module.exports = {
                     link.download_url = url;
                     link.movie_id = movie.id;
                     resolve(link);
-                    console.log("resolved");
                 }).catch(reject);
             }).catch(reject);
         });

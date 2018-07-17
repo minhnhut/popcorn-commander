@@ -7,6 +7,7 @@ module.exports = {
         "hashed": true
     },
     "downloadFolderPath": path.resolve(__dirname, "downloads"),
+    "afterDownloadMovePath": "",
     "downloaderOptions": {
         "maxConnections": 16,
         "forceMultipleConnections": true

@@ -114,7 +114,6 @@ export default {
             this.foundFlag = [];
             this.lookingForDownload = true;
             FshareLinkFinder.getFshareUrlForMovie(movie).then(links => {
-                console.log(links);
                 links.forEach(link => {
                     // each plugins only provide 1 url
                     this.foundFlag.push(link.source);
@@ -142,6 +141,7 @@ export default {
             });
         },
         openTrailer() {
+            console.log(this.movie.trailer_url);
             shell.openExternal(this.movie.trailer_url);
         }
     }
