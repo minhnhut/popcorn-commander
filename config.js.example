@@ -3,7 +3,8 @@ module.exports = {
     "dbPath": path.resolve(__dirname, "movie.db"),
     "fshareLogin": {
         "username": "your email",
-        "password": "password"
+        "password": "password",
+        "hashed": true
     },
     "downloadFolderPath": path.resolve(__dirname, "downloads"),
     "downloaderOptions": {
