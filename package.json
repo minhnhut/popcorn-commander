@@ -21,7 +21,7 @@
     "jquery": "^3.3.1",
     "linksvip-getter": "git+https://github.com/minhnhut/linksvip-getter.git",
     "ramda": "^0.25.0",
-    "rapid-downloader": "^1.1.1",
+    "rapid-downloader": "^1.2.0",
     "sequelize": "^4.38.0",
     "sqlite3": "^4.0.1",
     "style-loader": "^0.21.0",
