@@ -1,9 +1,9 @@
 <template>
-    <b-table fixed small bordered hover :outlined="false" :fields="fields" :items="movies" thead-class="d-none" class="table-movie" @row-clicked="handleRowClicked">
-        <template slot="thumbnail" slot-scope="data">
+    <b-table fixed small bordered hover :outlined="false" :fields="fields" :items="processedItems" thead-class="d-none" class="table-movie mb-0" @row-clicked="handleRowClicked">
+        <template slot="thumbnail" slot-scope="data" v-if="isMovie(data.item)">
             <img :src="data.item.thumbnail_url" alt="" width="50" height="73">
         </template>
-        <template slot="title" slot-scope="data">
+        <template slot="title" slot-scope="data" v-if="isMovie(data.item)">
             <h6>{{data.item.title}} <small v-if="data.item.year">({{data.item.year}})</small> <font-awesome-icon v-if="data.item._loading" icon="sync" spin /></h6>
             <actors :movie="data.item" />
             <download-status :movie="data.item" :downloader="getDownloader(data.item)" />
@@ -33,6 +33,16 @@ export default {
         DownloadStatus,
         Toolbar
     },
+    computed: {
+        processedItems() {
+            const neededBlankItemsNumber = 10 - this.movies.length;
+            let result = this.movies;
+            if (neededBlankItemsNumber > 0) {
+                for (let i = 0; i < neededBlankItemsNumber; i++) result.push({_rowVariant: 'dummy'});
+            }
+            return result;
+        }
+    },
     props: {
         downloadPool: Object
     },
@@ -46,12 +56,20 @@ export default {
         handleRemove(movie) {
             this.$emit("remove-click", movie);
         },
+        handleRowClicked(movie) {
+            if (this.isMovie(movie)) {
+                this.$emit("item-click", movie);
+            } else {
+                this.$emit("item-click", null);
+            }
+        },
         getDownloader(movie) {
             if (this.downloadPool && this.downloadPool[movie.id]) {
                 return this.downloadPool[movie.id];
             }
             return null;
         },
+        isMovie: (movie) => !!movie.id 
     }
 }
 </script>
@@ -62,6 +80,15 @@ export default {
     }
     .table-movie tr.table-active .toolbar, .table-movie tr:hover .toolbar {
         display: block;
+    }
+    .table-movie tr.table-dummy:hover .toolbar {
+        display: none;
+    }
+    .table-movie tr.table-dummy:hover {
+        background: transparent;
+    }
+    .table-movie tr.table-dummy {
+        cursor: default;
     }
     .toolbar {
         position: absolute;

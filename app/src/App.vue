@@ -151,7 +151,9 @@
                 if (this.movie) {
                     this.movie._rowVariant = "";
                 }
-                Vue.set(movie, "_rowVariant", "active");
+                if (movie) {
+                    Vue.set(movie, "_rowVariant", "active");
+                }
                 this.movie = movie;
             },
             showManualInsertModal() {

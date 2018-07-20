@@ -1,6 +1,6 @@
 <template>
     <b-navbar variant="dark" type="dark">
-        <b-navbar-brand>Commander</b-navbar-brand>
+        <b-navbar-brand><font-awesome-icon icon="rocket"/> Commander</b-navbar-brand>
         <b-nav-form>
             <download-folder-button class="mr-2" />
             <b-input-group class="mr-2">
