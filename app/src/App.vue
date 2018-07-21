@@ -67,6 +67,7 @@
         mounted() {
             ipcRenderer.on("backend-update-link", (event, {downloadPool, needRefresh}) => {
                 // this.downloadPool = downloadPool;
+                console.log(downloadPool);
                 Vue.set(this, "downloadPool", downloadPool);
                 if (needRefresh && needRefresh.length) {
                     DataLayer.exec(Db => {

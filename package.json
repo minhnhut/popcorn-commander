@@ -6,7 +6,12 @@
   "scripts": {
     "dev": "webpack",
     "start": "electron .",
-    "postinstall": "electron-builder"
+    "build": "electron-builder"
+  },
+  "build": {
+    "files": [
+      "!downloads/*"
+    ]
   },
   "author": "Minh Nhut",
   "repository": "minhnhut/electron-vue-webpack",
