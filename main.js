@@ -3,7 +3,8 @@ const electron = require('electron')
 const path = require('path')
 const Backend = require('./lib/Backend')
 const Config = require('./config')
-const {app, BrowserWindow, ipcMain} = electron
+const R = require('ramda')
+const {app, BrowserWindow} = electron
 
 // Let electron reloads by itself when webpack watches changes in ./app/
 require('electron-reload')(path.resolve(__dirname, "app"))
@@ -23,8 +24,10 @@ app.on('ready', () => {
     mainWindow.loadURL(`file://${__dirname}/app/index.html`)
     
     setInterval(() => {
+        const getProgress = worker => worker.getProgress();
+        const getAllProgress = R.mapObjIndexed(getProgress);
         mainWindow.webContents.send("backend-update-link", {
-            downloadPool: backend.downloadPool,
+            downloadPool: getAllProgress(backend.downloadPool),
             needRefresh: backend.needRefresh
         });
         backend.flushState();

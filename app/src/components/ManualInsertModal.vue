@@ -18,7 +18,8 @@
         </b-row>
         <b-row class="mt-2" v-if="!movie">
             <b-col>
-                <movie-grid-view :movies="movies" @item-click="selectMovie" />
+                <p class="text-center" v-if="searchLoading"><font-awesome-icon icon="spinner" pulse fixed-width /> Loading</p>
+                <movie-grid-view v-else :movies="movies" @item-click="selectMovie" />
             </b-col>
         </b-row>
         <b-card
@@ -72,6 +73,7 @@ export default {
     },
     watch: {
         searchName() {
+            this.searchLoading = true;
             if (this.searchCooldown) {
                 window.clearTimeout(this.searchCooldown);
             }
@@ -86,6 +88,7 @@ export default {
         searchName: "",
         movies: [],
         movie: null,
+        searchLoading: false,
         detailLoading: false,
         lookingForDownload: false,
         downloads: [],
@@ -105,6 +108,10 @@ export default {
                 Imdb.search(this.searchName)
                 .then(movies => {
                     this.movies = movies;
+                    this.searchLoading = false;
+                })
+                .catch(() => {
+                    this.searchLoading = false;
                 });
             }
         },

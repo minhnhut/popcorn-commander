@@ -7,6 +7,5 @@ export default {
     downloadFolderPath: backend.downloadFolderPath,
     downloaderOptions: backend.downloaderOptions,
     getDirectUrlFromFshareUrl,
-    makeDownloaderFromDirectUrl,
-    registerDownloadPoolUpdateHandler: (handler) => ipcRenderer.on("download-pool-update", handler)
+    makeDownloaderFromDirectUrl
 }

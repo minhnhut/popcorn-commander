@@ -1,7 +1,20 @@
 <template>
     <div>
         <template v-if="downloader">
-            <b-badge variant="warning" class="mb-0"><font-awesome-icon icon="spinner" pulse fixed-width /> {{downloader.completedPercent}}% - {{displayHumanReadableSpeed(downloader.bytesPerSecond, 2)}}</b-badge>
+            <b-badge variant="warning" v-if="downloader.state !== 'error'" class="mb-0"><font-awesome-icon icon="spinner" pulse fixed-width />
+                <template v-if="downloader.state == 'downloading'">
+                    {{downloader.completedPercent}}% - {{displayHumanReadableSpeed(downloader.bytesPerSecond, 2)}}
+                </template>
+                <template v-else-if="downloader.state == 'finishing'">
+                    Finishing
+                </template>
+                <template v-else-if="downloader.state == 'moving'">
+                    Moving
+                </template>
+            </b-badge>
+            <b-badge variant="danger" v-else class="mb-0">
+                <font-awesome-icon icon="exclamation-triangle" fixed-width /> Error
+            </b-badge>
         </template>
         <template v-else-if="movie.is_downloaded">
             <b-badge variant="success" class="mb-0"><font-awesome-icon icon="check" fixed-width /> Downloaded</b-badge>
