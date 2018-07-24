@@ -42,7 +42,10 @@ export default {
     computed: {
         download() {
             if (this.movie.downloads) {
-                return this.movie.downloads[0];
+                if (this.movie.current_download_id) {
+                    currentDownload = R.filter(download => download.id == this.movie.current_download_id, this.movie.downloads)
+                    return currentDownload[0] ? currentDownload[0] : null;
+                }
             }
             return null;
         }

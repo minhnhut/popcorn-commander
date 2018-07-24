@@ -11,7 +11,7 @@
                     :selected-movie="movie"
                     :download-pool="downloadPool"
                     @item-click="viewMovieDetail"
-                    @fetch-download-click="updateMovieDownloadLink"
+                    @fetch-download-click="openDownloadSelectorModal"
                     @download-click="startMovieDownload"
                     @remove-click="showRemoveConfirm" />
             </div>
@@ -19,6 +19,7 @@
                 
         <manual-insert-modal ref="manualInsertModal" @movie-select="insertMovie" />
         <remove-movie-modal ref="removeConfirmModal" @ok="removeMovie" />
+        <download-selector-modal ref="downloadSelectorModal" @commit-downloads="updateMovieDownloadLinks" />
         <notifications group="notification" position="bottom right" class="main-notification" />
         <bottom-status-bar :downloaded="stats.downloaded" :total="stats.total" />
     </div>
@@ -31,11 +32,12 @@
     import NavBar from "./components/NavBar.vue"
     import ManualInsertModal from "./components/ManualInsertModal.vue"
     import RemoveMovieModal from "./components/RemoveMovieModal.vue"
+    import DownloadSelectorModal from "./components/DownloadSelectorModal.vue"
     import { ipcRenderer } from 'electron'
     import DataLayer from './backend/DataLayer'
     import Downloader from './backend/Downloader'
     import Vue from 'vue'
-    import FShareLinkFinder from './support/FshareLinkFinder'
+    // import FShareLinkFinder from './support/FshareLinkFinder'
     // import DownloadPool from './support/DownloadPool'
     const R = require('ramda')
     // import R from 'ramda'
@@ -51,7 +53,8 @@
             MovieDetail,
             NavBar,
             ManualInsertModal,
-            RemoveMovieModal
+            RemoveMovieModal,
+            DownloadSelectorModal
         },
         data: () => ({
             search: "",
@@ -67,7 +70,6 @@
         mounted() {
             ipcRenderer.on("backend-update-link", (event, {downloadPool, needRefresh}) => {
                 // this.downloadPool = downloadPool;
-                console.log(downloadPool);
                 Vue.set(this, "downloadPool", downloadPool);
                 if (needRefresh && needRefresh.length) {
                     DataLayer.exec(Db => {
@@ -84,15 +86,12 @@
                                 Download.findAll({where: {movie_id: movie.id}})
                                 .then(downloads => {
                                     Vue.set(movie, "downloads", downloads)
-                                    // movie.downloads = downloads
                                 });
                             });
-                            console.log(movies);
                             this.movies.forEach((thisMovie,index) => {
                                 movies.forEach(newMovie => {
                                     if (thisMovie.id == newMovie.id) {
                                         Vue.set(this.movies, index, newMovie);
-                                        // thisMovie = R.merge(thisMovie, newMovie);
                                     }
                                 });
                             });
@@ -163,7 +162,6 @@
             insertMovie({movie, downloads}) {
                 DataLayer.exec(Db => {
                     const Movie = Db.getEntity("Movie");
-                    const Download = Db.getEntity("Download");
                     delete movie.id; // make sure movie doesn't have any id
                     Movie.findOne({where: {imdb_id: movie.imdb_id}}).then(dbMovie => {
                         if (dbMovie) {
@@ -173,10 +171,8 @@
                             });
                         } else {
                             Movie.create(movie).then((movie) => {
-                                if (downloads && downloads[0]) {
-                                    let download = downloads[0];
-                                    download.movie_id = movie.id;
-                                    Download.create(download);
+                                if (downloads) {
+                                    this.updateDownloadLinks(movie, downloads);
                                 }
                                 this.notySuccess(`${movie.title} - Created`, "New movie has been added to the collection");
                                 this.loadData();
@@ -185,64 +181,72 @@
                     });
                 });
             },
-            attachMovieDownloader(movie, download) {
-                console.log("download: " + download.download_url);
-                const startDownload = (directUrl) => {
-                    Downloader.makeDownloaderFromDirectUrl(movie.id, directUrl);
-                    Vue.set(movie, "_loading", false);
-                }
-                
-                if (!download.direct_url) {
-                    Downloader.getDirectUrlFromFshareUrl(download.download_url).then(directUrl => {
-                        DataLayer.exec(Db => {
-                            const Download = Db.getEntity("Download");
-                            Download.update({direct_url: directUrl}, {where: {id: download.id}});
-                        });
-                        startDownload(directUrl);
+            updateDownloadLinks(movie, downloads) {
+                DataLayer.exec(Db => {
+                    const Download = Db.getEntity("Download");
+                    const bulkCreateDownloads = R.forEach(download => {
+                        download.movie_id = movie.id;
+                        Download.create(download);
                     });
-                } else {
-                    startDownload(download.direct_url);
-                }
+                    Download.destroy({where: {movie_id: movie.id}}).then(() => {
+                        bulkCreateDownloads(downloads);
+                    })
+                });
             },
             startMovieDownload(movie) {
                 Vue.set(movie, "_loading", true);
-                if (movie.downloads && movie.downloads[0]) {
-                    this.attachMovieDownloader(movie, movie.downloads[0]);
+                if (movie.current_download_id) {
+                    const selectedDownload = R.filter(x => x.id = movie.current_download_id, movie.downloads);
+                    if (selectedDownload[0]) {
+                        const startDownload = (directUrl) => {
+                            Downloader.makeDownloaderFromDirectUrl(movie.id, directUrl);
+                            Vue.set(movie, "_loading", false);
+                        }
+                        if (!download.direct_url) {
+                            Downloader.getDirectUrlFromFshareUrl(download.download_url).then(directUrl => {
+                                DataLayer.exec(Db => {
+                                    const Download = Db.getEntity("Download");
+                                    Download.update({direct_url: directUrl}, {where: {id: download.id}});
+                                });
+                                startDownload(directUrl);
+                            });
+                        } else {
+                            startDownload(download.direct_url);
+                        }
+                        return;
+                    }
                 } else {
-                    this.updateMovieDownloadLink(movie);
+                    this.notyError(movie.title, "No download link found. Let's fetch it first.")
                 }
             },
-            updateMovieDownloadLink(movie) {
+            openDownloadSelectorModal(movie) {
+                this.$refs.downloadSelectorModal.show(movie);
+            },
+            updateMovieDownloadLinks({movie, downloads, selectedDownload, index}) {
                 Vue.set(movie, "_loading", true);
-                DataLayer.exec(Db=> {
+                DataLayer.exec(Db => {
                     const Movie = Db.getEntity("Movie");
                     const Download = Db.getEntity("Download");
-                    Download.findAll({where: {'movie_id': movie.id}})
-                    .then(downloads => {
-                        Movie.update({is_downloaded: 0}, {where: {id: movie.id}});
+                    downloads[index].the_choosen = true;
+                    const bulkCreateDownloads = R.forEach(download => {
+                        download.movie_id = movie.id;
+                        download.direct_url = "";
+                        Download.create(download).then(dbDownload => {
+                            console.log(download);
+                            if (download.the_choosen) {
+                                Movie.update({current_download_id: dbDownload.id}, {where: {id: movie.id}});
+                                Vue.set(movie, "current_download_id", dbDownload.id);
+                                this.startMovieDownload(movie);
+                            }
+                        });
+                    });
+                    Download.destroy({where: {movie_id: movie.id}}).then(() => {
+                        Movie.update({is_downloaded: 0, current_download_id: null}, {where: {id: movie.id}});
                         // no need to wait, lets change it locally
                         Vue.set(movie, "is_downloaded", false);
-                        // Delete all previous downloads
-                        Download.destroy({where: {movie_id: movie.id}}).then(() => {
-                            // Get new fshare link
-                            FShareLinkFinder.getFshareUrlForMovie(movie).then(links => {
-                                if (links.length === 0) {
-                                    this.notyError(movie.title, "Scanned all available sources. But no link was found.");
-                                } else {
-                                    const link = links[0];
-                                    const url = link.download_url;
-                                    const notySuccess = () => this.notySuccess(`${movie.title} - Updated`, "Looked and fetched new download link.");
-                                    Download.create(link).then(() => {
-                                        // Notify user that is is completed
-                                        notySuccess();
-                                        Download.findOne({where: {download_url: url}}).then(download => {
-                                            // Let's download begin
-                                            this.attachMovieDownloader(movie, download);
-                                        });
-                                    });
-                                }
-                            });
-                        });
+                        Vue.set(movie, "current_download_id", null);
+                        Vue.set(movie, "_loading", false);
+                        bulkCreateDownloads(downloads);
                     });
                 });
             },
