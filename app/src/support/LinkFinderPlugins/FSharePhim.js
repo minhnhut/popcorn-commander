@@ -52,10 +52,11 @@ module.exports = {
                         quality.toLowerCase().indexOf("subtitle") === -1) {
                         const link = {
                             source: "FsharePhim",
-                            download_url: downloadLinkTag.attr("href"),
+                            raw_url: downloadLinkTag.attr("href"),
                             size: downloadLinkTag.find(".face-secondary").text(),
                             filename: filename,
-                            quality: quality
+                            quality: quality,
+                            server: "fshare"
                         };
                         rawLinks.push(cleanUpLinkObject(link));
                     }
@@ -117,12 +118,25 @@ module.exports = {
                     resolve(null);
                 } else {
                     this.getByUrl(url, filter).then(links => {
-                        this.getFshareUrl(links[0].download_url).then(url => {
-                            // prepare link data
-                            const link = links[0];
-                            link.download_url = url;
-                            link.movie_id = movie.id;
-                            resolve(link);
+                        const parseRealUrl = x => new Promise(
+                            resolve => {
+                                this.getFshareUrl(x.raw_url)
+                                    .then(url => {
+                                        x.download_url=url;
+                                        resolve(x);
+                                    })
+                                    .catch(() => resolve(null))
+                            }
+                        );
+                        const getFshareUrlAll = R.map(parseRealUrl);
+                        const attachMovieIdToLinkArray = R.map(x => {
+                            x.movie_id = movie.id
+                            return x;
+                        });
+                        const allPromises = getFshareUrlAll(links);
+                        Promise.all(allPromises).then(links => {
+                            links = links.filter(link => !!link);
+                            resolve(links);
                         }).catch(reject);
                     }).catch(reject);
                 }

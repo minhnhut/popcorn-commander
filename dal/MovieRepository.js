@@ -46,6 +46,9 @@ class MovieRepository extends BaseRepository {
             duration: {
                 type: Sequelize.STRING
             },
+            current_download_id: {
+                type: Sequelize.NUMERIC
+            },
         };
     }
 

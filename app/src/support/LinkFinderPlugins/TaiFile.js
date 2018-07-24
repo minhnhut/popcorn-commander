@@ -5,8 +5,20 @@ const {tryOrDefault} = require("tryordefault")
 
 module.exports = {
     search(titleToSearch, priorityFilter) {
+        const searchRaw = R.curry(this.searchRaw);
+        const searchByHost = searchRaw(titleToSearch, priorityFilter);
+        return new Promise(
+            (resolve) => Promise.all([
+                searchByHost('fshare'),
+                searchByHost('4share')
+            ]).then(
+                linkGroups => resolve(R.apply(R.concat, linkGroups))
+            )
+        );
+    },
+    searchRaw(titleToSearch, priorityFilter, host) {
         return new Promise((resolve, reject) => {
-            axios.get('http://www.taifile.net/search.php?q='+encodeURIComponent(titleToSearch)+'&host=fshare')
+            axios.get('http://www.taifile.net/search.php?q='+encodeURIComponent(titleToSearch)+'&host=' + host)
             .then(res => {
                 const $ = cheerio.load(res.data);
                 const trimProp = R.compose(
@@ -54,7 +66,8 @@ module.exports = {
                         raw_url,
                         size,
                         filename,
-                        quality
+                        quality,
+                        server: host
                     };
                     rawLinks.push(cleanUpLinkObject(link));
                 });
@@ -96,7 +109,7 @@ module.exports = {
                 resolve(links);
             })
             .catch(e => {
-                reject(e);  
+                resolve([]);  
             });
             
         });
@@ -115,12 +128,21 @@ module.exports = {
     getFshareUrlForMovie(movie, filter) {
         return new Promise((resolve, reject) => {
             this.search(movie.title, filter).then(links => {
-                this.getFshareUrl(links[0].raw_url).then(url => {
-                    // prepare link data
-                    const link = links[0];
-                    link.download_url = url;
-                    link.movie_id = movie.id;
-                    resolve(link);
+                const parseRealUrl = x => new Promise(
+                    resolve => {
+                        this.getFshareUrl(x.raw_url)
+                            .then(url => {
+                                x.download_url=url;
+                                resolve(x);
+                            })
+                            .catch(() => resolve(null))
+                    }
+                );
+                const getFshareUrlAll = R.map(parseRealUrl);
+                const allPromises = getFshareUrlAll(links);
+                Promise.all(allPromises).then(links => {
+                    links = links.filter(link => !!link);
+                    resolve(links);
                 }).catch(reject);
             }).catch(reject);
         });
