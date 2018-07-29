@@ -23,6 +23,7 @@
     "axios": "^0.18.0",
     "bootstrap-vue": "^2.0.0-rc.11",
     "cheerio": "^1.0.0-rc.2",
+    "fs-extra": "^7.0.0",
     "jquery": "^3.3.1",
     "linksvip-getter": "git+https://github.com/minhnhut/linksvip-getter.git",
     "ramda": "^0.25.0",

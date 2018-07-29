@@ -64,8 +64,8 @@ module.exports = {
                 const getTwoParts = R.split(" ");
                 const convertTextToValue = x => {
                     switch (x) {
-                        case "GB": return 1000;
-                        case "MB": return 100;
+                        case "GB": return 10000000;
+                        case "MB": return 1000;
                         case "KB": return 10;
                         default: return x;
                     }

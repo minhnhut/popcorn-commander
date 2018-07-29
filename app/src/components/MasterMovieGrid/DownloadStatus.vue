@@ -43,7 +43,7 @@ export default {
         download() {
             if (this.movie.downloads) {
                 if (this.movie.current_download_id) {
-                    currentDownload = R.filter(download => download.id == this.movie.current_download_id, this.movie.downloads)
+                    const currentDownload = R.filter(download => download.id == this.movie.current_download_id, this.movie.downloads)
                     return currentDownload[0] ? currentDownload[0] : null;
                 }
             }

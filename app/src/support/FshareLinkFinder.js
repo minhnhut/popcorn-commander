@@ -3,7 +3,13 @@ const TaiFile = require("./LinkFinderPlugins/TaiFile")
 const R = require("ramda")
 
 const filter720pOnly = (link) => {
-    return link.quality.indexOf("720p") !== -1 && link.filename.toLowerCase().indexOf("bluray") !== -1;
+    console.log(link);
+    console.log(link.quality.indexOf("720p") !== -1
+    && link.filename.toLowerCase().indexOf("bluray") !== -1
+    && link.size_value > 1000);
+    return link.quality.indexOf("720p") !== -1
+        && link.filename.toLowerCase().indexOf("bluray") !== -1
+        && link.size_value > 10000000;
 }
 
 module.exports = {

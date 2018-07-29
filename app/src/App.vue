@@ -198,6 +198,7 @@
                 if (movie.current_download_id) {
                     const selectedDownload = R.filter(x => x.id = movie.current_download_id, movie.downloads);
                     if (selectedDownload[0]) {
+                        const download = selectedDownload[0];
                         const startDownload = (directUrl) => {
                             Downloader.makeDownloaderFromDirectUrl(movie.id, directUrl);
                             Vue.set(movie, "_loading", false);
@@ -225,15 +226,16 @@
             updateMovieDownloadLinks({movie, downloads, selectedDownload, index, isDirty}) {
                 Vue.set(movie, "_loading", true);
                 DataLayer.exec(Db => {
+                    const Movie = Db.getEntity("Movie");
+                    const Download = Db.getEntity("Download");
+
                     if (isDirty) {
-                        const Movie = Db.getEntity("Movie");
-                        const Download = Db.getEntity("Download");
                         downloads[index].the_choosen = true;
                         const bulkCreateDownloads = R.forEach(download => {
                             download.movie_id = movie.id;
                             download.direct_url = "";
                             Download.create(download).then(dbDownload => {
-                                console.log(download);
+                                console.log(dbDownload);
                                 if (download.the_choosen) {
                                     Movie.update({current_download_id: dbDownload.id}, {where: {id: movie.id}});
                                     Vue.set(movie, "current_download_id", dbDownload.id);
@@ -250,7 +252,10 @@
                             bulkCreateDownloads(downloads);
                         });
                     } else {
-                
+                        const currentMovieId = downloads[index].id;
+                        Movie.update({current_download_id: currentMovieId}, {where: {id: movie.id}});
+                        Vue.set(movie, "current_download_id", null);
+                        this.startMovieDownload(movie);
                     }
                 });
             },
