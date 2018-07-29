@@ -222,32 +222,36 @@
             openDownloadSelectorModal(movie) {
                 this.$refs.downloadSelectorModal.show(movie);
             },
-            updateMovieDownloadLinks({movie, downloads, selectedDownload, index}) {
+            updateMovieDownloadLinks({movie, downloads, selectedDownload, index, isDirty}) {
                 Vue.set(movie, "_loading", true);
                 DataLayer.exec(Db => {
-                    const Movie = Db.getEntity("Movie");
-                    const Download = Db.getEntity("Download");
-                    downloads[index].the_choosen = true;
-                    const bulkCreateDownloads = R.forEach(download => {
-                        download.movie_id = movie.id;
-                        download.direct_url = "";
-                        Download.create(download).then(dbDownload => {
-                            console.log(download);
-                            if (download.the_choosen) {
-                                Movie.update({current_download_id: dbDownload.id}, {where: {id: movie.id}});
-                                Vue.set(movie, "current_download_id", dbDownload.id);
-                                this.startMovieDownload(movie);
-                            }
+                    if (isDirty) {
+                        const Movie = Db.getEntity("Movie");
+                        const Download = Db.getEntity("Download");
+                        downloads[index].the_choosen = true;
+                        const bulkCreateDownloads = R.forEach(download => {
+                            download.movie_id = movie.id;
+                            download.direct_url = "";
+                            Download.create(download).then(dbDownload => {
+                                console.log(download);
+                                if (download.the_choosen) {
+                                    Movie.update({current_download_id: dbDownload.id}, {where: {id: movie.id}});
+                                    Vue.set(movie, "current_download_id", dbDownload.id);
+                                    this.startMovieDownload(movie);
+                                }
+                            });
                         });
-                    });
-                    Download.destroy({where: {movie_id: movie.id}}).then(() => {
-                        Movie.update({is_downloaded: 0, current_download_id: null}, {where: {id: movie.id}});
-                        // no need to wait, lets change it locally
-                        Vue.set(movie, "is_downloaded", false);
-                        Vue.set(movie, "current_download_id", null);
-                        Vue.set(movie, "_loading", false);
-                        bulkCreateDownloads(downloads);
-                    });
+                        Download.destroy({where: {movie_id: movie.id}}).then(() => {
+                            Movie.update({is_downloaded: 0, current_download_id: null}, {where: {id: movie.id}});
+                            // no need to wait, lets change it locally
+                            Vue.set(movie, "is_downloaded", false);
+                            Vue.set(movie, "current_download_id", null);
+                            Vue.set(movie, "_loading", false);
+                            bulkCreateDownloads(downloads);
+                        });
+                    } else {
+                
+                    }
                 });
             },
             showRemoveConfirm(movie) {
