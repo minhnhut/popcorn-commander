@@ -1,7 +1,7 @@
 {
-  "name": "electron-vue-webpack",
-  "version": "1.0.1",
-  "description": "A minimal Electron + Vue 2 + Webpack 2 + Bootstrap Vue + Fontawesome Vue setup with few dependencies for quick development.",
+  "name": "movie-crawl-commander",
+  "version": "1.1",
+  "description": "Manage, find fshare, 4share links, fetch directlink and download movie with accerlated downloader.",
   "main": "main.js",
   "scripts": {
     "dev": "webpack",
@@ -10,11 +10,13 @@
   },
   "build": {
     "files": [
-      "!downloads/*"
+      "!downloads/*",
+      "!movie.db",
+      "!config.js"
     ]
   },
   "author": "Minh Nhut",
-  "repository": "minhnhut/electron-vue-webpack",
+  "repository": "minhnhut/movie-crawl-commander",
   "license": "WTFPL",
   "dependencies": {
     "@fortawesome/fontawesome": "^1.1.8",
@@ -27,7 +29,7 @@
     "jquery": "^3.3.1",
     "linksvip-getter": "git+https://github.com/minhnhut/linksvip-getter.git",
     "ramda": "^0.25.0",
-    "rapid-downloader": "^1.2.3",
+    "rapid-downloader": "^1.2.5",
     "sequelize": "^4.38.0",
     "sqlite3": "^4.0.2",
     "style-loader": "^0.21.0",
