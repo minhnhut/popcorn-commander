@@ -10,7 +10,8 @@ class DownloadRepository extends BaseRepository {
         return {
             id: {
                 type: Sequelize.INTEGER,
-                primaryKey: true
+                primaryKey: true,
+                autoIncrement: true
             },
             movie_id: {
                 type: Sequelize.INTEGER

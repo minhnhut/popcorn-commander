@@ -70,6 +70,7 @@
         mounted() {
             ipcRenderer.on("backend-update-link", (event, {downloadPool, needRefresh}) => {
                 // this.downloadPool = downloadPool;
+                // console.log(downloadPool);
                 Vue.set(this, "downloadPool", downloadPool);
                 if (needRefresh && needRefresh.length) {
                     DataLayer.exec(Db => {
@@ -91,6 +92,9 @@
                             this.movies.forEach((thisMovie,index) => {
                                 movies.forEach(newMovie => {
                                     if (thisMovie.id == newMovie.id) {
+                                        new Notification('Title', {
+                                            body: 'Lorem Ipsum Dolor Sit Amet'
+                                        })
                                         Vue.set(this.movies, index, newMovie);
                                     }
                                 });
@@ -195,6 +199,7 @@
             },
             startMovieDownload(movie) {
                 Vue.set(movie, "_loading", true);
+                // console.log(movie.current_download_id);
                 if (movie.current_download_id) {
                     const selectedDownload = R.filter(x => x.id = movie.current_download_id, movie.downloads);
                     if (selectedDownload[0]) {
@@ -228,17 +233,19 @@
                 DataLayer.exec(Db => {
                     const Movie = Db.getEntity("Movie");
                     const Download = Db.getEntity("Download");
-
+                    // console.log("dirty: " + isDirty);
                     if (isDirty) {
                         downloads[index].the_choosen = true;
+                        Vue.set(movie, "downloads", downloads);
                         const bulkCreateDownloads = R.forEach(download => {
                             download.movie_id = movie.id;
                             download.direct_url = "";
                             Download.create(download).then(dbDownload => {
-                                console.log(dbDownload);
+                                movie.downloads[index].id = dbDownload.id;
                                 if (download.the_choosen) {
                                     Movie.update({current_download_id: dbDownload.id}, {where: {id: movie.id}});
-                                    Vue.set(movie, "current_download_id", dbDownload.id);
+                                    // Vue.set(movie, "current_download_id", dbDownload.id);
+                                    movie.current_download_id = dbDownload.id;
                                     this.startMovieDownload(movie);
                                 }
                             });
@@ -254,7 +261,9 @@
                     } else {
                         const currentMovieId = downloads[index].id;
                         Movie.update({current_download_id: currentMovieId}, {where: {id: movie.id}});
-                        Vue.set(movie, "current_download_id", null);
+                        Download.update({direct_url:null}, {where: {id: currentMovieId}});
+                        Vue.set(movie, "current_download_id", currentMovieId);
+                        Vue.set(downloads[index], "direct_url", null);
                         this.startMovieDownload(movie);
                     }
                 });

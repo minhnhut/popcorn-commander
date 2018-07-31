@@ -1,8 +1,9 @@
 <template>
     <b-modal
+        class="modal-download-selector"
         ref="modal"
         title="Insert new movie"
-        size="lg"
+        size="xl"
         :hide-footer="true"
     >
         <p class="text-right">
@@ -13,25 +14,28 @@
                 <p class="text-center" v-if="searchLoading">
                     <font-awesome-icon icon="spinner" spin /> loading ...
                 </p>
-                <table class="table table-bordered" v-else>
+                <table class="table table-bordered table-hover table-sm" v-else>
                     <thead>
                         <tr>
-                            <th>Server</th>
-                            <th>Filename</th>
-                            <th width="100">Size</th>
-                            <th width="150">Quality</th>
+                            <th>Files</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody :key="index" v-for="(download, index) in internalDownloads">
                         <tr>
-                            <td>{{download.server}}</td>
-                            <td>{{download.filename}}</td>
-                            <td>{{download.size}}</td>
-                            <td>{{download.quality}}</td>
                             <td>
-                                <b-btn variant="primary">
-                                    <font-awesome-icon icon="download" @click="handleDownloadClicked(download, index)" />
+                                <p class="mb-0">
+                                    {{download.filename}}
+                                </p>
+                                <p class="mb-0">
+                                    <b-badge variant="dark">{{download.server}}</b-badge>
+                                    <b-badge variant="success">{{download.size}}</b-badge>
+                                    <b-badge variant="warning">{{download.quality}}</b-badge>
+                                </p>
+                            </td>
+                            <td>
+                                <b-btn variant="primary" @click="handleDownloadClicked(download, index)">
+                                    <font-awesome-icon icon="download" />
                                 </b-btn>
                             </td>
                         </tr>
@@ -88,3 +92,10 @@ export default {
     }
 }
 </script>
+
+
+<style>
+    .modal-download-selector .modal-xl {
+        max-width: 570px;
+    }
+</style>
