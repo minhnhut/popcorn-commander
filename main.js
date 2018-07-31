@@ -6,14 +6,15 @@ const R = require('ramda')
 const fs = require('fs')
 const {app, BrowserWindow, dialog} = electron
 
-const config = fs.readFileSync('./config.js', error => {
-    if (error) {
-        dialog.showErrorBox("Can not load configuration", "config.js can not be found in current working directory. You can always make one, by copy config.js.example, and rename it to config.js");
-        process.exit(1);
-    }
-});
+let config;
+try {
+    config = fs.readFileSync('./config.js');
+} catch (err) {
+    dialog.showErrorBox("Can not load configuration", "config.js can not be found in current working directory. You can always make one, by copy config.js.example, and rename it to config.js");
+    process.exit(1);
+}
+
 const Config = eval(config.toString());
-console.log(Config);
 
 // Let electron reloads by itself when webpack watches changes in ./app/
 if (/electron/.test(process.execPath)) {
@@ -33,6 +34,10 @@ app.on('ready', () => {
         minWidth: 600
     })
     mainWindow.loadURL(`file://${__dirname}/app/index.html`)
+
+    mainWindow.on("close", () => {
+        process.exit(0);
+    })
     
     setInterval(() => {
         const getProgress = worker => worker.getProgress();
