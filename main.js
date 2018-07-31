@@ -2,12 +2,23 @@
 const electron = require('electron')
 const path = require('path')
 const Backend = require('./lib/Backend')
-const Config = require('./config')
 const R = require('ramda')
-const {app, BrowserWindow} = electron
+const fs = require('fs')
+const {app, BrowserWindow, dialog} = electron
+
+const config = fs.readFileSync('./config.js', error => {
+    if (error) {
+        dialog.showErrorBox("Can not load configuration", "config.js can not be found in current working directory. You can always make one, by copy config.js.example, and rename it to config.js");
+        process.exit(1);
+    }
+});
+const Config = eval(config.toString());
+console.log(Config);
 
 // Let electron reloads by itself when webpack watches changes in ./app/
-require('electron-reload')(path.resolve(__dirname, "app"))
+if (/electron/.test(process.execPath)) {
+    require('electron-reload')(path.resolve(__dirname, "app"))
+}
 const backend = new Backend(Config);
 global.backend = backend;
 
