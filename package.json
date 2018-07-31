@@ -1,6 +1,6 @@
 {
-  "name": "movie-crawl-commander",
-  "productName": "Movie crawl commander",
+  "name": "popcorn-commander",
+  "productName": "Popcorn Commander",
   "version": "1.1.0",
   "description": "Manage, find fshare, 4share links, fetch directlink and download movie with accerlated downloader.",
   "main": "main.js",
@@ -18,7 +18,7 @@
     ]
   },
   "author": "Minh Nhut",
-  "repository": "minhnhut/movie-crawl-commander",
+  "repository": "minhnhut/popcorn-commander",
   "license": "WTFPL",
   "dependencies": {
     "@fortawesome/fontawesome": "^1.1.8",
