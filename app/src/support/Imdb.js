@@ -56,6 +56,9 @@ module.exports = {
             axios.get('https://www.imdb.com/title/'+id+'/')
             .then(res => {
                 const $ = cheerio.load(res.data);
+
+                // new
+                const json = JSON.parse($('script[type="application/ld+json"]').html());
     
                 // year
                 const rawYear = $("#titleYear").text();
@@ -68,9 +71,9 @@ module.exports = {
                     R.trim,
                     removeYear
                 );
-                const title = cleanUpTitle($("h1[itemprop='name']").text());
+                const title = cleanUpTitle($("h1").text());
     
-                const rating = $("[itemprop='contentRating']").attr("content");
+                const rating = json.contentRating; //$("[itemprop='contentRating']").attr("content");
                 // duration
                 const cleanUpDuration = R.trim;
                 const duration = cleanUpDuration($($("[itemprop='duration']").get(0)).text());
@@ -83,12 +86,12 @@ module.exports = {
                     R.join(", "),
                     R.map(trimAndRemoveComma)
                 );
-                const genre = cleanTrimAndJoinChilds($("span[itemprop='genre']").get().map(node => $(node).text()));
-                const star = cleanTrimAndJoinChilds($("[itemprop='actors']").get().map(node => $(node).text()));
+                const genre = json.genre.join(', '); //cleanTrimAndJoinChilds($(".subtext a").get().filter(a => a.href.indexOf('/genre/') !== -1).map(node => $(node).text()));
+                const star = R.map(x => x.name, json.actor).join(', '); // cleanTrimAndJoinChilds($("[itemprop='actors']").get().map(node => $(node).text()));
                 // image
-                const thumbnail = $('[itemprop="image"]').attr("src");
+                const thumbnail = json.image; //$('[itemprop="image"]').attr("src");
                 // review star
-                const reviewStar = $("[itemprop='ratingValue']").text();
+                const reviewStar = json.aggregateRating.ratingValue;//$(".ratingValue span").text();
                 // description
                 const description = R.trim($(".summary_text").text());
 
