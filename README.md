@@ -4,7 +4,7 @@ My movie crawlling commander desktop app. WIP
 
 1. clone the project
 2. npm i
-3. copy config.js.example to config.js. Modify if neccessary.
+3. copy config.js.example to config.js. Add Linksvip account and modify if neccessary.
 4. npm run dev
 4. npm start
 
